@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, ShieldAlert, Loader2, Zap, Terminal, ChevronRight, Activity, BrainCircuit, Maximize, X, CameraOff, RefreshCw, FileText, CheckCircle2, ScanLine } from 'lucide-react';
 import { analyzePhysicalDocument } from '../services/geminiService';
@@ -96,7 +95,6 @@ const NeuralEye: React.FC<NeuralEyeProps> = ({ language = 'English', onAuditExtr
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Viewfinder / Capture Section */}
         <div className="space-y-8">
           <div className="bg-[#0a0a0a] border border-white/10 rounded-[64px] p-4 relative overflow-hidden shadow-2xl aspect-[4/3] group">
             {error ? (
@@ -110,21 +108,17 @@ const NeuralEye: React.FC<NeuralEyeProps> = ({ language = 'English', onAuditExtr
             ) : (
               <div className="relative h-full w-full overflow-hidden rounded-[48px]">
                 <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                
-                {/* Tactical HUD Overlays */}
                 <div className="absolute inset-0 pointer-events-none">
                   <div className="absolute top-10 left-10 w-12 h-12 border-t-4 border-l-4 border-cyan-400/40 rounded-tl-xl" />
                   <div className="absolute top-10 right-10 w-12 h-12 border-t-4 border-r-4 border-cyan-400/40 rounded-tr-xl" />
                   <div className="absolute bottom-10 left-10 w-12 h-12 border-b-4 border-l-4 border-cyan-400/40 rounded-bl-xl" />
                   <div className="absolute bottom-10 right-10 w-12 h-12 border-b-4 border-r-4 border-cyan-400/40 rounded-br-xl" />
-                  
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-64 h-80 border-2 border-dashed border-white/10 rounded-3xl" />
                   </div>
-
                   <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-black/60 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10">
-                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                     <span className="text-[9px] font-black uppercase text-gray-300 tracking-widest italic">Optical Link Stable: 1080p</span>
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[9px] font-black uppercase text-gray-300 tracking-widest italic">Optical Link Stable: 1080p</span>
                   </div>
                 </div>
               </div>
@@ -132,18 +126,17 @@ const NeuralEye: React.FC<NeuralEyeProps> = ({ language = 'English', onAuditExtr
 
             {isAnalyzing && (
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-8">
-                 <div className="relative">
-                    <Loader2 className="animate-spin text-cyan-400" size={80}/>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                       <ScanLine className="text-cyan-400/50 animate-pulse" size={32} />
-                    </div>
-                 </div>
-                 <div className="text-center">
+                  <div className="relative">
+                     <Loader2 className="animate-spin text-cyan-400" size={80}/>
+                     <div className="absolute inset-0 flex items-center justify-center">
+                        <ScanLine className="text-cyan-400/50 animate-pulse" size={32} />
+                     </div>
+                  </div>
+                  <div className="text-center">
                     <p className="text-2xl font-black text-white uppercase italic tracking-tighter">Deciphering Text Lattice...</p>
-                    <p className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.5em] animate-pulse">OCR / Structural Scrutiny Active</p>
-                 </div>
-                 {/* Laser Sweep Effect */}
-                 <div className="absolute inset-x-0 h-1 bg-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.8)] animate-[scan_2s_linear_infinite]" />
+                    <p className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.5em] animate-pulse">OCR Scrutiny Active</p>
+                  </div>
+                  <div className="absolute inset-x-0 h-1 bg-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.8)] animate-[scan_2s_linear_infinite]" />
               </div>
             )}
           </div>
@@ -151,14 +144,13 @@ const NeuralEye: React.FC<NeuralEyeProps> = ({ language = 'English', onAuditExtr
           {!capturedImage && !error && (
             <button 
               onClick={captureFrame} 
-              className="w-full py-8 bg-white text-black font-black rounded-[40px] text-2xl uppercase italic shadow-2xl hover:bg-cyan-500 hover:text-white transition-all active:scale-95 flex items-center justify-center gap-6"
+              className="w-full py-8 bg-white text-black font-black rounded-[40px] text-2xl uppercase italic shadow-2xl hover:bg-cyan-500 hover:text-white transition-all flex items-center justify-center gap-6"
             >
               <Camera size={32} /> Execute Optical Audit
             </button>
           )}
         </div>
 
-        {/* Results / Insights Area */}
         <div className="lg:col-span-1 flex flex-col gap-8">
           <div className="bg-[#0a0a0a] border border-white/10 rounded-[48px] p-10 shadow-2xl flex-1 relative overflow-hidden flex flex-col">
             <div className="absolute top-0 right-0 p-8 opacity-5"><BrainCircuit size={120} className="text-cyan-400" /></div>
@@ -173,24 +165,14 @@ const NeuralEye: React.FC<NeuralEyeProps> = ({ language = 'English', onAuditExtr
                    {analysisResult.split('\n').map((line, i) => {
                      if (line.startsWith('# ')) return <h4 key={i} className="text-lg font-black text-white uppercase italic tracking-tight border-b border-white/5 pb-2 mb-4">{line.replace('# ', '')}</h4>;
                      if (line.startsWith('## ')) return <h5 key={i} className="text-cyan-400 font-black uppercase tracking-widest mt-6">{line.replace('## ', '')}</h5>;
-                     if (line.includes('[EXPOSURE_SCORE]')) {
-                       const score = line.split(': ')[1] || '0%';
-                       return (
-                         <div key={i} className="my-6 p-6 bg-cyan-400/5 border border-cyan-400/20 rounded-3xl text-center">
-                            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Optical Risk Score</span>
-                            <div className="text-4xl font-black text-cyan-400 tracking-tighter mt-1">{score}</div>
-                         </div>
-                       );
-                     }
                      return <p key={i} className="mb-2">{line}</p>;
                    })}
                 </div>
               ) : isAnalyzing ? (
                 <div className="space-y-4">
-                   <p className="animate-pulse">>> Detecting Clause Boundaries...</p>
-                   <p className="animate-pulse delay-75">>> Extracting Entity Signatures...</p>
-                   <p className="animate-pulse delay-150">>> Cross-referencing Precedent Nodes...</p>
-                   <p className="animate-pulse delay-300">>> Generating Structural Posture...</p>
+                   <p className="animate-pulse">{`>> Detecting Clause Boundaries...`}</p>
+                   <p className="animate-pulse delay-75">{`>> Extracting Entity Signatures...`}</p>
+                   <p className="animate-pulse delay-150">{`>> Cross-referencing Precedents...`}</p>
                 </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center opacity-20 text-center">

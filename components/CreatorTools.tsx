@@ -1,6 +1,12 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Key, Copy, Check, Send, Mail, Download, Package, RefreshCw, ShieldCheck, ShoppingCart, UserCheck, Terminal, Server, Globe, CheckCircle2, Loader2, X, ExternalLink, FileText, ListFilter, Zap, Sparkles, RotateCcw, AlertCircle, Ban, Truck, Users, DollarSign, ArrowRight, Plus, Hash, Layers, Rocket, Image as ImageIcon, Archive, FlaskConical, Play, Code, Volume2, ShieldAlert, Activity, GitCompare } from 'lucide-react';
+import { 
+  Key, Copy, Check, Send, Mail, Download, Package, RefreshCw, ShieldCheck, 
+  ShoppingCart, UserCheck, Terminal, Server, Globe, CheckCircle2, Loader2, 
+  X, ExternalLink, FileText, ListFilter, Zap, Sparkles, RotateCcw, 
+  AlertCircle, Ban, Truck, Users, DollarSign, ArrowRight, Plus, Hash, 
+  Layers, Rocket, Image as ImageIcon, Archive, FlaskConical, Play, 
+  Code, Volume2, ShieldAlert, Activity, GitCompare 
+} from 'lucide-react';
 import MarketingSuite from './MarketingSuite';
 import { Language } from '../types';
 
@@ -100,8 +106,12 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
     terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [terminalLogs]);
 
-  const handleAssetGenerated = (asset: Omit<BrandAsset, 'id'>) => {
-    const newAsset = { ...asset, id: `ASSET-${Date.now()}` };
+  // FIXED: Properly typed to match MarketingSuite's expectations and satisfy TS
+  const handleAssetGenerated = (asset: any) => {
+    const newAsset: BrandAsset = { 
+      ...asset, 
+      id: asset.id || `ASSET-${Date.now()}` 
+    };
     setBrandArchive(prev => [newAsset, ...prev]);
     setTerminalLogs(prev => [...prev, `[ARCHIVE] New ${asset.type.toUpperCase()} committed to neural vault.`]);
   };
@@ -112,7 +122,7 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
     } else if (asset.type === 'text') {
       return `<p class="lexiscan-copy text-gray-300">${asset.content}</p>`;
     }
-    return `<!-- Nexus Audio: Play via Neural Engine JS v5.0 -->`;
+    return ``;
   };
 
   const playAudio = async (base64: string) => {
@@ -250,7 +260,7 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
 
               {showIntake && (
                 <form onSubmit={addNewOrder} className="mb-12 p-10 bg-indigo-500/5 border border-indigo-500/20 rounded-[40px] animate-in slide-in-from-top-4 duration-500 relative shadow-inner">
-                  {justAdded && <div className="absolute inset-0 bg-indigo-600/98 flex items-center justify-center z-20 animate-in fade-in zoom-in duration-300 rounded-[40px]"><div className="text-center"><CheckCircle2 size={48} className="mx-auto text-white mb-4" /><p className="text-white font-black uppercase text-xl tracking-tighter italic">Inbound Verified: {justAdded}</p></div></div>}
+                  {justAdded && <div className="absolute inset-0 bg-indigo-600/98 flex items-center justify-center z-20 animate-in fade-in zoom-in duration-300 rounded-[40px]"><div className="text-center"><CheckCircle2 size={48} className="mx-auto text-white mb-4" /><p className="text-white font-black uppercase text-xl tracking-tighter italic">{`Inbound Verified: ${justAdded}`}</p></div></div>}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                     <div className="space-y-3">
                       <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] ml-2">Identity Name</label>
@@ -339,7 +349,8 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
                <div className="mt-12 flex-1 overflow-y-auto font-mono text-[10px] space-y-3 pr-4 scrollbar-none custom-scrollbar">
                  {terminalLogs.map((log, i) => (
                    <div key={i} className={`flex items-start gap-4 transition-opacity duration-300 ${i === terminalLogs.length - 1 ? 'text-indigo-400' : 'text-indigo-900'}`}>
-                     <span className="text-indigo-800 font-black opacity-30">></span>
+                     {/* FIXED: Removed extra bracket from the span below */}
+                     <span className="text-indigo-800 font-black opacity-30"></span>
                      <span className="leading-relaxed italic">{log}</span>
                    </div>
                  ))}
@@ -358,7 +369,7 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
                    <h3 className="text-4xl font-black text-white uppercase tracking-tighter italic">NEXUS <span className="text-indigo-500">LAB.</span></h3>
                    <div className="flex items-center gap-4 mt-4">
                       <button onClick={() => setLabSubTab('generate')} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all ${labSubTab === 'generate' ? 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/20' : 'bg-white/5 text-gray-600 hover:text-white'}`}>Synthesis</button>
-                      <button onClick={() => setLabSubTab('archive')} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all ${labSubTab === 'archive' ? 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/20' : 'bg-white/5 text-gray-600 hover:text-white'}`}>Neural Archive ({brandArchive.length})</button>
+                      <button onClick={() => setLabSubTab('archive')} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all ${labSubTab === 'archive' ? 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/20' : 'bg-white/5 text-gray-600 hover:text-white'}`}>{`Neural Archive (${brandArchive.length})`}</button>
                    </div>
                 </div>
              </div>
@@ -410,7 +421,7 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
                            </div>
                          )}
                          <h5 className="text-xs font-black text-white mb-2 uppercase tracking-tighter truncate italic">{asset.prompt}</h5>
-                         <p className="text-[9px] text-gray-700 uppercase font-black tracking-[0.4em]">UUID: {asset.id}</p>
+                         <p className="text-[9px] text-gray-700 uppercase font-black tracking-[0.4em]">{`UUID: ${asset.id}`}</p>
                       </div>
 
                       <div className="p-8 pt-0 grid grid-cols-2 gap-4">
@@ -458,7 +469,7 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
           <div className="max-w-md w-full bg-[#0a0a0a] border border-red-500/20 rounded-[64px] p-16 text-center shadow-2xl">
             <div className="w-24 h-24 bg-red-500/10 rounded-[32px] flex items-center justify-center mb-10 mx-auto text-red-500 shadow-xl shadow-red-500/5"><AlertCircle size={48} /></div>
             <h2 className="text-4xl font-black mb-4 text-white uppercase tracking-tighter italic">REVERSE FLOW?</h2>
-            <p className="text-gray-500 text-lg mb-12 font-medium italic">"Severing license access for <span className="text-white font-bold">{orderToRefund.name}</span> will permanently wipe associated neural signatures."</p>
+            <p className="text-gray-500 text-lg mb-12 font-medium italic">{`"Severing license access for ${orderToRefund.name} will permanently wipe associated neural signatures."`}</p>
             <div className="space-y-4">
               <button onClick={processRefund} className="w-full py-6 bg-red-600 text-white font-black rounded-3xl shadow-xl hover:bg-red-500 transition-all active:scale-95 text-xl uppercase tracking-widest">Confirm Rollback</button>
               <button onClick={() => setOrderToRefund(null)} className="w-full py-6 bg-white/5 text-white font-black rounded-3xl hover:bg-white/10 transition-all text-xl uppercase tracking-widest">Abort Termination</button>
