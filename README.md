@@ -36,3 +36,5 @@ View your app in AI Studio: https://ai.studio/apps/drive/1Ca3vDpNdztrKYFePOHHCCK
 CI: A GitHub Actions workflow (`.github/workflows/ci.yml`) runs tests and builds on push/pull_request. Ensure you add `VITE_GEMINI_API_KEY` to your repository Secrets (Settings → Secrets → Actions) and to Vercel Environment Variables (Project Settings → Environment Variables) so CI and production builds pass the prebuild check.
 
 Developer note: `synthesizePortfolioRisk` is now implemented as a Gemini-backed endpoint that returns a markdown posture and is used by the `PortfolioSynthesis` UI; many other functions in `services/geminiService.ts` remain placeholders and are documented in `.github/copilot-instructions.md`.
+
+PR visibility test: small non-functional edit added to verify the PR diff and allow creating a Pull Request for `feat/ci-gemini`.
