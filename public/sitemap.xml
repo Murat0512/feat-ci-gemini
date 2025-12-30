@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <!-- Main landing page -->
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Dashboard -->
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app/dashboard</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Feature pages -->
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app/features/neural-vault</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app/features/compliance-radar</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app/features/legal-audit</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app/features/document-analysis</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app/features/risk-assessment</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Product pages -->
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app/product</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Settings -->
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app/settings</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Project Hub -->
+  <url>
+    <loc>https://feat-ci-gemini.vercel.app/projects</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>

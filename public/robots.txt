@@ -1,0 +1,25 @@
+# LexiScan Pro - Search Engine Crawling Rules
+
+# Allow all bots to crawl the entire site
+User-agent: *
+Allow: /
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Disallow private/admin pages if any
+Disallow: /admin/
+Disallow: /.env
+Disallow: /private/
+
+# Sitemap location for search engines
+Sitemap: https://feat-ci-gemini.vercel.app/sitemap.xml
+
+# Cache control
+Cache-control: max-age=86400
