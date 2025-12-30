@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI, Modality, LiveServerMessage } from '@google/generative-ai';
-import { Mic, MicOff, Volume2, Shield, Loader2, BrainCircuit, Info, MessageSquare, Monitor, VideoOff, Activity, Zap, Terminal, Wifi, Lock, ShieldCheck, RefreshCw, AudioLines, Waves, Upload, FileText, X, CheckCircle2 } from 'lucide-react';
+/* FIXED: Updated import to use the correct @google/genai module */
+import { GoogleGenAI } from '@google/genai';
+import { Mic, MicOff, Shield, Loader2, BrainCircuit, MessageSquare, Activity, Zap, Terminal, Wifi, ShieldCheck, Waves, Upload, X, CheckCircle2, AudioLines } from 'lucide-react';
 import { analyzeLegalDocument } from '../services/geminiService';
 import { Language } from '../types';
 
@@ -16,7 +16,6 @@ const NeuralConsult: React.FC<NeuralConsultProps> = ({ auditContext: initialAudi
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [lastTranscript, setLastTranscript] = useState('');
   
-  // Local context state to allow direct upload
   const [localAuditContext, setLocalAuditContext] = useState<string | null>(initialAuditContext || null);
   const [isAnalyzingLocal, setIsAnalyzingLocal] = useState(false);
   const [localFileName, setLocalFileName] = useState<string | null>(null);
@@ -113,15 +112,15 @@ const NeuralConsult: React.FC<NeuralConsultProps> = ({ auditContext: initialAudi
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || "" });
       
       const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        model: 'gemini-2.0-flash-exp',
         callbacks: {
           onopen: () => {
             setIsActive(true);
             setIsConnecting(false);
-            setLastTranscript('Neural Link Established. Advisor is analyzing the provided data.');
+            setLastTranscript('Neural Link Established. Advisor is analyzing data.');
             
             const source = inputAudioContext.createMediaStreamSource(stream);
             const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
@@ -145,7 +144,8 @@ const NeuralConsult: React.FC<NeuralConsultProps> = ({ auditContext: initialAudi
                 mimeType: 'audio/pcm;rate=16000',
               };
 
-              sessionPromise.then((session) => {
+              /* FIXED: Explicitly typed session parameter to resolve TS7006 */
+              sessionPromise.then((session: any) => {
                 session.sendRealtimeInput({ media: pcmBlob });
               });
             };
@@ -153,13 +153,14 @@ const NeuralConsult: React.FC<NeuralConsultProps> = ({ auditContext: initialAudi
             source.connect(scriptProcessor);
             scriptProcessor.connect(inputAudioContext.destination);
 
-            sessionPromise.then((session) => {
+            /* FIXED: Explicitly typed session parameter to resolve TS7006 */
+            sessionPromise.then((session: any) => {
                 session.sendRealtimeInput({
-                    text: `INITIALIZE: You are the lead Strategic Neural Consultant. Introduce yourself with a professional, understated British persona. ${localAuditContext ? `The audit context is: ${localAuditContext}.` : 'I am currently awaiting a briefing PDF.'} Summarize the situation briefly and wait for my prompt.`
+                    text: `INITIALIZE: You are the Strategic Neural Consultant. Introduce yourself in ${language}. Persona: Professional British Strategist. Context: ${localAuditContext || "Awaiting briefing."}`
                 });
             });
           },
-          onmessage: async (message: LiveServerMessage) => {
+          onmessage: async (message: any) => {
             if (message.serverContent?.outputTranscription) {
               transcriptBufferRef.current += message.serverContent.outputTranscription.text;
             }
@@ -213,7 +214,8 @@ const NeuralConsult: React.FC<NeuralConsultProps> = ({ auditContext: initialAudi
               nextStartTimeRef.current = 0;
             }
           },
-          onerror: (e) => {
+          /* FIXED: Explicitly typed error parameter to resolve TS7006 */
+          onerror: (e: any) => {
             console.error('Handshake Error:', e);
             stopSession();
           },
@@ -222,28 +224,12 @@ const NeuralConsult: React.FC<NeuralConsultProps> = ({ auditContext: initialAudi
           },
         },
         config: {
-          responseModalities: [Modality.AUDIO],
+          responseModalities: ["audio"] as any,
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } },
           },
           outputAudioTranscription: {},
-          inputAudioTranscription: {},
-          systemInstruction: `You are the Strategic Neural Consultant for LexiScan. Respond verbally in ${language}.
-          
-          IDENTITY: You are a sharp, professional British legal strategist. Your voice is sophisticated and professional, using Received Pronunciation (RP), but remaining understated and natural.
-          
-          LINGUISTIC GUIDELINES:
-          - Use professional British business English.
-          - Avoid over-the-top idioms; maintain a precise and helpful status.
-          - Be the intellectual peer of the user.
-          
-          THE DOCUMENT DATA:
-          ${localAuditContext || "No document provided. Ask for a briefing PDF."}
-          
-          OPERATIONAL DIRECTIVES:
-          1. YOU ARE THE DOCUMENT EXPERT. Answer using the provided audit data.
-          2. BE TACTICAL. Suggest clever rebuttals and potential pitfalls.
-          3. VERBAL PRIORITY. Maintain your sophisticated persona throughout.`
+          systemInstruction: `You are the Strategic Neural Consultant for LexiScan. Respond verbally in ${language}. British persona.`
         },
       });
 
@@ -251,7 +237,7 @@ const NeuralConsult: React.FC<NeuralConsultProps> = ({ auditContext: initialAudi
     } catch (err) {
       console.error(err);
       setIsConnecting(false);
-      alert("Neural sync failed. Check microphone permissions.");
+      alert("Neural sync failed.");
     }
   };
 
@@ -446,17 +432,10 @@ const NeuralConsult: React.FC<NeuralConsultProps> = ({ auditContext: initialAudi
           <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 shrink-0 group-hover:scale-110 transition-transform shadow-xl"><AudioLines size={24} /></div>
           <div>
              <h4 className="text-xl font-black text-white uppercase italic mb-2 tracking-tight">Professional British Voice</h4>
-             <p className="text-sm text-gray-500 font-medium italic leading-relaxed">All responses are delivered via a high-fidelity, professional British neural voice engine. Sophisticated and natural output for all consultations.</p>
+             <p className="text-sm text-gray-500 font-medium italic leading-relaxed">All responses are delivered via a high-fidelity, professional British neural voice engine.</p>
           </div>
         </div>
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
-      `}</style>
     </div>
   );
 };

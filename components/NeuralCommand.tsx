@@ -35,7 +35,7 @@ const NeuralCommand: React.FC<NeuralCommandProps> = ({ vaultContext, language = 
       await runNeuralCommandStream(
         userMsg, 
         vaultContext, 
-        (chunk) => {
+        (chunk: string) => {
           setThinkingText(''); // Clear initial status
           fullAiResponse += chunk;
           setThinkingText(fullAiResponse); // Use thinkingText as the "streaming" buffer

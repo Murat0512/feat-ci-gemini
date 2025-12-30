@@ -66,7 +66,7 @@ Before you begin, ensure you have the following installed on your machine:
 - Create a new file named \`.env\` in the root folder.
 - Add your API key to the \`.env\` file like this:
   \`\`\`env
-  VITE_API_KEY=your_actual_key_here
+  VITE_GEMINI_API_KEY=your_actual_key_here
   \`\`\`
 
 ### 3. Terminal Commands
