@@ -98,9 +98,10 @@ const ComplianceRadar: React.FC<ComplianceRadarProps> = ({ language = 'English',
              <div className="mt-12 h-48 overflow-y-auto font-mono text-[10px] text-gray-500 space-y-4 pr-4 custom-scrollbar italic leading-relaxed">
                 {isAnalyzing ? (
                   <div className="space-y-2">
-                    <p className="animate-pulse text-emerald-500">>> Searching ${jurisdiction} Federal Register...</p>
-                    <p className="animate-pulse text-emerald-500 delay-100">>> Cross-referencing EU AI Act Article 23...</p>
-                    <p className="animate-pulse text-emerald-500 delay-300">>> Calculating Delta Gaps...</p>
+                    <p className="animate-pulse text-emerald-500">{`>> Searching ${jurisdiction} Federal Register...`}</p>
+                    <p className="animate-pulse text-emerald-500 delay-100">{`>> Cross-referencing EU AI Act Article 23...`}</p>
+                    <p className="animate-pulse text-emerald-500 delay-300">{`>> Calculating Delta Gaps...`}</p>
+                    
                   </div>
                 ) : report ? 'Regulatory sync successful. See report.' : 'Radar awaiting jurisdiction targeting...'}
              </div>
