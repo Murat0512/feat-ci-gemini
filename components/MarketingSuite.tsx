@@ -1,6 +1,4 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-/* Added missing 'X' icon to the import list from lucide-react */
 import { Sparkles, Image as ImageIcon, FileText, Download, Loader2, Play, MonitorPlay, Zap, Key, ExternalLink, RefreshCw, Copy, Check, ShoppingBag, Store, Layers, BarChart3, Rocket, Volume2, Mic, Save, History, Terminal, Share2, Info, ArrowUpRight, Video, Clapperboard, Monitor, ShieldCheck, AlertCircle, X } from 'lucide-react';
 import { generateMarketingAssets, generateMarketingVisual, generateSonicIdentity, generateSovereignVideo } from '../services/geminiService';
 import { Language } from '../types';
@@ -48,7 +46,10 @@ const MarketingSuite: React.FC<MarketingSuiteProps> = ({ language = 'English', o
   }, [initialContext]);
 
   const checkAndGenerateVideo = async () => {
-    if (typeof (window as any).aistudio === 'undefined') return;
+    if (typeof (window as any).aistudio === 'undefined') {
+       handleGenerateVideo();
+       return;
+    }
     
     const hasKey = await (window as any).aistudio.hasSelectedApiKey();
     if (!hasKey) {
@@ -61,14 +62,15 @@ const MarketingSuite: React.FC<MarketingSuiteProps> = ({ language = 'English', o
   const handleSelectKey = async () => {
     await (window as any).aistudio.openSelectKey();
     setShowKeyPrompt(false);
-    handleGenerateVideo(); // Proceed assuming success per guidelines
+    handleGenerateVideo();
   };
 
   const handleGenerateVideo = async () => {
     setIsGeneratingVideo(true);
     setVideoUrl(null);
     try {
-      const url = await generateSovereignVideo(videoPrompt, (msg) => setVideoUpdate(msg));
+      // FIXED: Added msg: string to solve TS7006 error
+      const url = await generateSovereignVideo(videoPrompt, (msg: string) => setVideoUpdate(msg));
       setVideoUrl(url);
       if (url && onAssetGenerated) {
         onAssetGenerated({ type: 'video', content: url, prompt: videoPrompt, timestamp: new Date().toLocaleTimeString() });
@@ -384,24 +386,6 @@ const MarketingSuite: React.FC<MarketingSuiteProps> = ({ language = 'English', o
            </div>
         </div>
       )}
-
-      {/* Lab Insight */}
-      <div className="mt-20 p-12 bg-indigo-500/5 border border-indigo-500/10 rounded-[48px] flex flex-col md:flex-row items-center justify-between gap-10">
-         <div className="max-w-xl">
-            <h4 className="text-2xl font-black text-white uppercase italic mb-2 tracking-tight">Direct Context Injection</h4>
-            <p className="text-gray-500 text-base font-medium leading-relaxed italic">The Nexus Lab v5.0 can absorb audit data directly from Module 01 to ensure your marketing claims are legally fortified and hyper-targeted.</p>
-         </div>
-         <div className="flex gap-4">
-            <div className="p-4 px-8 bg-black/40 border border-white/5 rounded-2xl flex flex-col items-center">
-               <span className="text-3xl font-black text-white">400ms</span>
-               <span className="text-[8px] font-black uppercase tracking-widest text-indigo-500 mt-1">Lattice Delay</span>
-            </div>
-            <div className="p-4 px-8 bg-black/40 border border-white/5 rounded-2xl flex flex-col items-center">
-               <span className="text-3xl font-black text-white">98%</span>
-               <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500 mt-1">Linguistic Sync</span>
-            </div>
-         </div>
-      </div>
     </div>
   );
 };

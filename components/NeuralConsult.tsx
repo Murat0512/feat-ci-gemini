@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
+import { GoogleGenAI, Modality, LiveServerMessage } from '@google/generative-ai';
 import { Mic, MicOff, Volume2, Shield, Loader2, BrainCircuit, Info, MessageSquare, Monitor, VideoOff, Activity, Zap, Terminal, Wifi, Lock, ShieldCheck, RefreshCw, AudioLines, Waves, Upload, FileText, X, CheckCircle2 } from 'lucide-react';
 import { analyzeLegalDocument } from '../services/geminiService';
 import { Language } from '../types';

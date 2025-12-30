@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, lazy, Suspense, useRef, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import AuthGate from './components/AuthGate';
@@ -156,7 +155,7 @@ const TacticalMap: React.FC<{ audits: HistoricAudit[], onFocusJurisdiction: (j: 
             style={{ left: `${r.x}%`, top: `${r.y}%` }}
            >
               <div className={`w-3 h-3 rounded-full ${status.count > 0 ? 'animate-pulse' : ''} transition-all duration-1000 shadow-2xl relative`} style={{ backgroundColor: status.color }}>
-                 {status.count > 0 && <div className={`absolute inset-[-4px] rounded-full border border-${status.color.includes('239') ? 'red' : 'emerald'}-500/40 animate-ping`} />}
+                 {status.count > 0 && <div className={`absolute inset-[-4px] rounded-full border border-emerald-500/40 animate-ping`} />}
               </div>
               <span className="text-[5px] font-black text-gray-700 tracking-widest group-hover:text-white transition-colors uppercase">{r.name}</span>
            </div>
@@ -325,8 +324,14 @@ const App: React.FC = () => {
     } catch (err) { console.error(err); } finally { setIsSyncing(false); }
   }, []);
 
-  const handleAddProvision = async (prov: Omit<GlobalProvision, 'id' | 'timestamp'>) => {
-    const newProv = { ...prov, id: `PROV-${Date.now()}`, timestamp: new Date().toLocaleString(), tags: [] };
+  // FIXED: Simplified the Provision adding to ensure property compatibility
+  const handleAddProvision = async (prov: { category: string; originalClause: string; safeClause: string; tags?: string[] }) => {
+    const newProv: GlobalProvision = { 
+      ...prov, 
+      id: `PROV-${Date.now()}`, 
+      timestamp: new Date().toLocaleString(), 
+      tags: prov.tags || [] 
+    };
     setProvisions(prev => [newProv, ...prev]);
     addToast("Provision Committed to Library", "success");
 
@@ -338,7 +343,7 @@ const App: React.FC = () => {
            category: prov.category,
            original_clause: prov.originalClause,
            safe_clause: prov.safeClause,
-           tags: []
+           tags: prov.tags || []
          }]);
        } catch (err) { console.error("Cloud provision sync failed", err); }
        finally { setIsSyncing(false); }
@@ -349,12 +354,10 @@ const App: React.FC = () => {
     const init = async () => {
       setIsLoadingSession(true);
       
-      // Load local cache immediately
       const savedHistory = localStorage.getItem('lexiscan_history_local');
       if (savedHistory) setAuditHistory(JSON.parse(savedHistory));
 
       if (cloudActive && supabase) {
-        // 1. Initial Session Check
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const userObj = { id: session.user.id, email: session.user.email || '', name: session.user.user_metadata.name || 'User' };
@@ -363,8 +366,8 @@ const App: React.FC = () => {
           await fetchCloudData(session.user.id);
         }
 
-        // 2. Global Auth Listener (Catches redirects from Email confirmation)
-        supabase.auth.onAuthStateChange(async (event, session) => {
+        // FIXED: Added explicit any types to event and session to satisfy TS7006
+        supabase.auth.onAuthStateChange(async (event: any, session: any) => {
            if (event === 'SIGNED_IN' && session?.user) {
               const userObj = { id: session.user.id, email: session.user.email || '', name: session.user.user_metadata.name || 'User' };
               setUser(userObj);
@@ -450,12 +453,12 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case AppView.LANDING: return <LandingPage isActivated={!!user} onEnterSuite={() => { if (user) setCurrentView(AppView.DASHBOARD); else setIsAuthOpen(true); }} />;
-      case AppView.LEGAL_AUDIT: return <Suspense fallback={<ModuleLoader />}><LegalAudit language={targetLanguage} savedAnalysis={latestAuditResult} onAuditComplete={handleAuditComplete} onStartConsult={() => setCurrentView(AppView.LIVE_CONSULT)} onError={(e) => addToast(e.message, "error")} onSaveProvision={handleAddProvision} /></Suspense>;
+      case AppView.LEGAL_AUDIT: return <Suspense fallback={<ModuleLoader />}><LegalAudit language={targetLanguage} savedAnalysis={latestAuditResult} onAuditComplete={handleAuditComplete} onStartConsult={() => setCurrentView(AppView.LIVE_CONSULT)} onError={(e: any) => addToast(e.message, "error")} onSaveProvision={handleAddProvision} /></Suspense>;
       case AppView.NEURAL_LIBRARY: return <Suspense fallback={<ModuleLoader />}><NeuralLibrary provisions={provisions} onDelete={(id) => setProvisions(prev => prev.filter(p => p.id !== id))} onAdd={handleAddProvision} /></Suspense>;
       case AppView.REDLINE_MASTER: return <Suspense fallback={<ModuleLoader />}><RedlineMaster language={targetLanguage} onRedlineComplete={() => addToast("Redline Analysis Committed", "success")} /></Suspense>;
       case AppView.RISK_ASSESSMENT: return <Suspense fallback={<ModuleLoader />}><RiskAssessment auditContext={latestAuditResult || undefined} language={targetLanguage} /></Suspense>;
       case AppView.PROJECT_HUB: return <Suspense fallback={<ModuleLoader />}><ProjectHub projects={projects} currentProjectId={currentProjectId} onSelectProject={(id) => { setCurrentProjectId(id); setCurrentView(AppView.DASHBOARD); }} onCreateProject={handleCreateProject} onDeleteProject={(id) => setProjects(prev => prev.filter(p => p.id !== id))} /></Suspense>;
-      case AppView.MARKETING_SUITE: return <Suspense fallback={<ModuleLoader />}><MarketingSuite language={targetLanguage} initialContext={latestAuditResult || undefined} /></Suspense>;
+      case AppView.MARKETING_SUITE: return <Suspense fallback={<ModuleLoader />}><MarketingSuite language={targetLanguage} initialContext={latestAuditResult || undefined} onAssetGenerated={() => {}} /></Suspense>;
       case AppView.DASHBOARD:
         const projectAudits = auditHistory.filter(a => a.projectId === currentProjectId || currentProjectId === 'DEFAULT');
         return (
@@ -520,7 +523,7 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {[ 
+                 {[ 
                     { title: "Neural Eye", icon: Camera, view: AppView.NEURAL_EYE, color: "cyan" },
                     { title: "Neural Deploy", icon: Globe, view: AppView.NEURAL_DEPLOY, color: "emerald" },
                     { title: "Neural Mask", icon: Ghost, view: AppView.NEURAL_MASK, color: "fuchsia" },
@@ -530,12 +533,12 @@ const App: React.FC = () => {
                     { title: "Tactical Audit", icon: FileText, view: AppView.LEGAL_AUDIT, color: "indigo" }, 
                     { title: "Neural Forensics", icon: Fingerprint, view: AppView.NEURAL_FORENSICS, color: "emerald" },
                     { title: "Redline Master", icon: FileDiff, view: AppView.REDLINE_MASTER, color: "indigo" },
-                  ].map(card => (
+                 ].map(card => (
                     <button key={card.title} onClick={() => setCurrentView(card.view)} className="bg-[#0f0f0f] border border-white/5 rounded-[48px] p-10 text-left hover:border-indigo-500/30 hover:bg-white/[0.02] transition-all group shadow-xl">
                       <div className={`w-12 h-12 rounded-2xl bg-${card.color}-500/10 flex items-center justify-center text-${card.color}-400 mb-8`}><card.icon size={24} /></div>
                       <h4 className="text-xl font-black text-white mb-2 uppercase italic">{card.title}</h4>
                     </button>
-                  ))}
+                 ))}
                </div>
                <div className="lg:col-span-1 h-full min-h-[600px] flex flex-col gap-8">
                  <Suspense fallback={<div className="h-full bg-white/5 animate-pulse rounded-[48px]" />}>
@@ -613,7 +616,7 @@ const App: React.FC = () => {
   };
 
   if (isLoadingSession) return <div className="h-screen w-screen bg-[#020202] flex items-center justify-center"><ModuleLoader message="Syncing Neural Identity..." /></div>;
-  if (isAuthOpen) return <AuthGate onAuthSuccess={async (u) => { setUser({...u, id: u.id || `LOCAL-${Date.now()}`}); setIsAuthOpen(false); if (u.id) await fetchCloudData(u.id); setCurrentView(AppView.DASHBOARD); }} />;
+  if (isAuthOpen) return <AuthGate onAuthSuccess={async (u: any) => { setUser({...u, id: u.id || `LOCAL-${Date.now()}`}); setIsAuthOpen(false); if (u.id) await fetchCloudData(u.id); setCurrentView(AppView.DASHBOARD); }} />;
   if (currentView === AppView.LANDING) return renderView();
 
   return (
@@ -653,7 +656,7 @@ const App: React.FC = () => {
           projects={projects}
           onSelectProject={(id) => { setCurrentProjectId(id); addToast(`Switched to node: ${id}`, 'info'); }}
           audits={auditHistory}
-          onLoadAudit={(a) => { setLatestAuditResult(a.analysisText); setCurrentView(AppView.LEGAL_AUDIT); }}
+          onLoadAudit={(a: any) => { setLatestAuditResult(a.analysisText); setCurrentView(AppView.LEGAL_AUDIT); }}
         />
       </Suspense>
 

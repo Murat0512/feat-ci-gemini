@@ -23,7 +23,7 @@ export const bundleProjectForMarketplace = async (files: Record<string, string>)
       "react": "^19.0.0",
       "react-dom": "^19.0.0",
       "lucide-react": "^0.562.0",
-      "@google/genai": "^1.34.0",
+      "@google/generative-ai": "^1.34.0",
       "jszip": "^3.10.1"
     },
     "devDependencies": {
