@@ -26,8 +26,8 @@ const PrecedentForge: React.FC<PrecedentForgeProps> = ({ language = 'English', i
       const result = await forgeLegalRebuttal(clauseText, riskType, language as Language);
       setRebuttal(result);
     } catch (err) {
-      console.error(err);
-      alert("Forge synchronization failed. Data nodes are oscillating.");
+      console.error("Precedent forge error:", err);
+      alert("⚡ Forge Error: Data synchronization failed. Please verify input and retry.");
     } finally {
       setIsForging(false);
     }

@@ -1,24 +1,41 @@
 
-import React, { useState, useRef } from 'react';
-import { Archive, Trash2, ExternalLink, Calendar, FileText, ShieldAlert, ChevronRight, Search, LayoutGrid, List, Sparkles, Loader2, X, Info, DatabaseZap, Download, Upload, ShieldCheck, Zap, History, RefreshCw, Move, Layers, Check, AlertCircle, Swords, Mic2, Square, CheckSquare } from 'lucide-react';
-import { HistoricAudit, AppView } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Archive, Trash2, ExternalLink, Calendar, FileText, ShieldAlert, ChevronRight, Search, LayoutGrid, List, Sparkles, Loader2, X, Info, DatabaseZap, Download, Upload, ShieldCheck, Zap, History, RefreshCw, Layers, Check, AlertCircle, Swords, Mic2, Square, CheckSquare, AlertTriangle } from 'lucide-react';
+import { HistoricAudit, AppView, Project } from '../types';
 import { searchVaultIntelligence } from '../services/geminiService';
 
 interface NeuralVaultProps {
   audits: HistoricAudit[];
+  projects: Project[];
+  currentProjectId: string;
   onLoadAudit: (audit: HistoricAudit) => void;
   onDeleteAudit: (id: string) => void;
   onImportVault?: (importedAudits: HistoricAudit[]) => void;
   onAction?: (audit: HistoricAudit, view: AppView) => void;
   onSynthesize?: (selected: HistoricAudit[]) => void;
+  onMoveAudits?: (ids: string[], targetProjectId: string) => void;
+  onDeleteSelected?: (ids: string[]) => void;
 }
 
-const NeuralVault: React.FC<NeuralVaultProps> = ({ audits, onLoadAudit, onDeleteAudit, onImportVault, onAction, onSynthesize }) => {
+const NeuralVault: React.FC<NeuralVaultProps> = ({ audits, projects, currentProjectId, onLoadAudit, onDeleteAudit, onImportVault, onAction, onSynthesize, onMoveAudits, onDeleteSelected }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [matchedIds, setMatchedIds] = useState<string[] | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [targetProjectId, setTargetProjectId] = useState<string>(currentProjectId);
+  const [confirmIds, setConfirmIds] = useState<string[] | null>(null);
+  const [confirmMessage, setConfirmMessage] = useState<string>('');
+
+  useEffect(() => {
+    if (!projects || projects.length === 0) return;
+    const fallback = projects.find(p => p.id !== currentProjectId)?.id || projects[0].id;
+    setTargetProjectId((prev) => {
+      if (!projects.some(p => p.id === prev)) return fallback;
+      if (prev === currentProjectId && fallback) return fallback;
+      return prev;
+    });
+  }, [projects, currentProjectId]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +79,28 @@ const NeuralVault: React.FC<NeuralVaultProps> = ({ audits, onLoadAudit, onDelete
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setSelectedIds(next);
+  };
+
+  const handleMoveSelected = () => {
+    if (!onMoveAudits || selectedIds.size === 0) return;
+    if (!targetProjectId) return;
+    onMoveAudits([...selectedIds], targetProjectId);
+    setSelectedIds(new Set());
+  };
+
+  const handleDeleteSelected = () => {
+    if (!onDeleteSelected || selectedIds.size === 0) return;
+    setConfirmIds([...selectedIds]);
+    setConfirmMessage(`Delete ${selectedIds.size} selected audit${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`);
+  };
+
+  const confirmDeleteNow = () => {
+    if (!confirmIds || confirmIds.length === 0) return;
+    if (!onDeleteSelected) return;
+    onDeleteSelected(confirmIds);
+    setSelectedIds(new Set());
+    setConfirmIds(null);
+    setConfirmMessage('');
   };
 
   const clearSearch = () => {
@@ -141,7 +180,7 @@ const NeuralVault: React.FC<NeuralVaultProps> = ({ audits, onLoadAudit, onDelete
                            {selectedIds.has(audit.id) ? <CheckSquare className="text-indigo-500" size={20}/> : <Square className="text-gray-800" size={20}/>}
                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-700">{audit.timestamp}</span>
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); onDeleteAudit(audit.id); }} className="text-gray-800 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); setConfirmIds([audit.id]); setConfirmMessage('Delete this audit? This cannot be undone.'); }} className="text-gray-800 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
                      </div>
                      <div className="flex items-center gap-6 mb-10">
                         <div className={`w-16 h-16 rounded-2xl bg-${audit.color}-500/10 border border-${audit.color}-500/20 flex items-center justify-center text-${audit.color}-500 shadow-xl group-hover:scale-110 transition-transform`}><FileText size={28} /></div>
@@ -186,23 +225,61 @@ const NeuralVault: React.FC<NeuralVaultProps> = ({ audits, onLoadAudit, onDelete
         </div>
       </div>
 
-      {selectedIds.size >= 2 && onSynthesize && (
-        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[300] w-full max-w-2xl animate-in slide-in-from-bottom-12 duration-500">
-           <div className="bg-[#0f0f0f]/90 backdrop-blur-2xl border border-indigo-500/30 rounded-[40px] p-6 flex items-center justify-between shadow-2xl shadow-indigo-500/20">
-              <div className="flex items-center gap-6 pl-4">
-                 <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 border border-indigo-500/20"><Layers size={24}/></div>
-                 <div>
-                    <h5 className="text-lg font-black text-white uppercase italic tracking-tighter">{selectedIds.size} Audits Linked</h5>
-                    <p className="text-[9px] font-black uppercase text-indigo-400/60 tracking-widest">Macro-Synthesis Ready</p>
-                 </div>
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[300] w-full max-w-3xl animate-in slide-in-from-bottom-12 duration-500">
+          <div className="bg-[#0f0f0f]/95 backdrop-blur-2xl border border-indigo-500/30 rounded-[40px] p-6 flex flex-col gap-4 shadow-2xl shadow-indigo-500/20">
+            <div className="flex items-center gap-6 pl-2 flex-wrap">
+              <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 border border-indigo-500/20"><Layers size={24}/></div>
+              <div>
+                <h5 className="text-lg font-black text-white uppercase italic tracking-tighter">{selectedIds.size} Audit(s) Selected</h5>
+                <p className="text-[9px] font-black uppercase text-indigo-400/60 tracking-widest">Move, Delete, or Synthesize</p>
               </div>
-              <div className="flex items-center gap-4">
-                 <button onClick={() => setSelectedIds(new Set())} className="text-gray-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest px-4">Discard</button>
-                 <button onClick={() => onSynthesize(audits.filter(a => selectedIds.has(a.id)))} className="px-8 py-4 bg-indigo-600 text-white font-black rounded-3xl flex items-center gap-3 hover:bg-indigo-500 transition-all shadow-xl active:scale-95 text-xs uppercase tracking-widest">
-                    <Zap size={16} fill="currentColor"/> Portfolio Posture
-                 </button>
+              <div className="flex items-center gap-3 ml-auto">
+                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-600">Target Workspace</label>
+                <select 
+                 value={targetProjectId}
+                 onChange={(e) => setTargetProjectId(e.target.value)}
+                 className="bg-black border border-white/10 rounded-2xl px-4 py-2 text-xs font-bold text-white uppercase tracking-widest"
+                >
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id} className="bg-[#0a0a0a] text-white">{p.name}</option>
+                  ))}
+                </select>
               </div>
-           </div>
+            </div>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+               <button onClick={() => setSelectedIds(new Set())} className="text-gray-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest px-4">Clear Selection</button>
+               <button onClick={handleMoveSelected} className="px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-xl active:scale-95 disabled:opacity-50" disabled={selectedIds.size === 0 || !targetProjectId}>
+                Move to Workspace
+               </button>
+                   <button onClick={handleDeleteSelected} className="px-6 py-3 bg-red-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-red-500 transition-all shadow-xl active:scale-95 disabled:opacity-50" disabled={selectedIds.size === 0}>
+                     Delete Selected
+                   </button>
+              </div>
+              {onSynthesize && selectedIds.size >= 2 && (
+               <button onClick={() => onSynthesize(audits.filter(a => selectedIds.has(a.id)))} className="px-8 py-4 bg-indigo-600 text-white font-black rounded-3xl flex items-center gap-3 hover:bg-indigo-500 transition-all shadow-xl active:scale-95 text-xs uppercase tracking-widest">
+                 <Zap size={16} fill="currentColor"/> Portfolio Posture
+               </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmIds && (
+        <div className="fixed inset-0 z-[320] flex items-center justify-center p-6 bg-black/80 backdrop-blur-2xl">
+          <div className="w-full max-w-md bg-[#0a0a0a] border border-red-500/30 rounded-3xl p-10 space-y-6 shadow-2xl">
+            <div className="flex items-center gap-3 text-red-400">
+              <AlertTriangle size={20} />
+              <h3 className="text-xl font-black uppercase">Confirm Deletion</h3>
+            </div>
+            <p className="text-sm text-gray-400 leading-relaxed">{confirmMessage}</p>
+            <div className="flex items-center justify-end gap-3">
+              <button onClick={() => { setConfirmIds(null); setConfirmMessage(''); }} className="px-4 py-2 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Cancel</button>
+              <button onClick={confirmDeleteNow} className="px-5 py-3 bg-red-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-red-500 transition-all shadow-lg">Delete</button>
+            </div>
+          </div>
         </div>
       )}
 

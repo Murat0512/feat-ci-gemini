@@ -54,6 +54,11 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ auditContext, language 
 
   const handleExport = async () => {
     if (!assessment || !reportRef.current) return;
+    if (typeof html2pdf === 'undefined') {
+      alert("PDF engine isn't ready yet. Falling back to browser print.");
+      window.print();
+      return;
+    }
     setIsExporting(true);
     const element = reportRef.current;
     const originalStyle = element.getAttribute('style') || '';
@@ -76,6 +81,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ auditContext, language 
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error(err);
+      window.print();
     } finally {
       element.setAttribute('style', originalStyle);
       setIsExporting(false);

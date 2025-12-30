@@ -20,44 +20,19 @@ Quick, action-oriented guidance for AI coding agents working in this repository.
 
 - Primary runtime env variable used by code: `VITE_GEMINI_API_KEY` (referenced in `services/geminiService.ts`).
 - Note: README previously referenced `GEMINI_API_KEY` — prefer `VITE_GEMINI_API_KEY` when adding or reading environment variables.
-- Optional cloud env vars: `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` (used by `services/supabaseClient.ts` if provided). Note: the repo no longer includes a baked-in Supabase key; set these env vars in Vercel Project Settings → Environment Variables for production builds.
+- Optional cloud env vars: `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` (used by `services/supabaseClient.ts` if provided). Use Vercel Project Settings → Environment Variables to add these for production builds.
 
 ## Vercel deployment notes
 
 - Build command: `npm run build` (runs `tsc && vite build`) and output dir: `dist`.
 - Vite requires `VITE_`-prefixed env vars to be present at build time — set `VITE_GEMINI_API_KEY` in the Vercel Project → Settings → Environment Variables (set for Production and Preview as needed).
 - For SPAs, include a simple `vercel.json` if you want consistent routing and build options (this repo includes one that sets the static build output to `dist`).
-- This project includes a build-time env check (`scripts/checkEnv.js`) that runs as `prebuild` and will fail CI/Vercel builds if `VITE_GEMINI_API_KEY` is not set — set the var in Vercel Project Settings → Environment Variables for a successful production build.
 - If you prefer a minimal check: verify the `dist/` folder appears after `npm run build` locally before deploying.
 
 ## Service patterns & examples
 
 - Gemini integration (RPC-style): use `genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })` and call `model.generateContent(...)`. See `services/geminiService.ts`. The repo uses `executeWithRetry` wrapper for model calls — reuse it for robust requests.
-
-### Service implementation status
-- Implemented (real or model-backed):
-  - `analyzeLegalDocument` — image input auditing (calls the model)
-  - `compareLegalDocuments` — document comparison (calls the model)
-  - `synthesizePortfolioRisk` — macro-synthesis (calls the model and returns markdown posture)
-
-- Implemented but simulated / lightweight (work to replace with production prompts):
-  - `runNeuralCommandStream` — streaming simulation (used by `NeuralCommand`)
-
-- Placeholders / TODO (implement these with robust prompts, parsing, and tests):
-  - `generateMarketingAssets`, `generateMarketingVisual`, `generateSonicIdentity`, `generateSovereignVideo`
-  - `searchVaultIntelligence`, `checkCompliance`, `forgeLegalRebuttal`
-  - `generateCounterpartyDossier`, `projectJudicialOutcome`, `runHighTableConsensus`
-  - `generateClauseRewrite`, `generateRemediatedDraft`, `generateForensicManifest`
-  - `runNeuralMaskScan`, `evaluateSandboxComposition`, `runVoidScan`
-  - `generateNeuralRedline`, `forecastLitigationVector`, `generateRiskAssessment`
-  - `runSovereignGraph`, `getGeoLegalIntelligence`, `runNeuralDiscovery`
-
-Notes:
-- `synthesizePortfolioRisk` is implemented and unit-tested (Vitest). Check `services/__tests__/geminiService.test.ts` for examples of mocking `genAI`.
-- Add tests for other functions as they are implemented; prefer mocking the `genAI` client to keep tests fast and deterministic.
-
-- Testing: run `npm test` (Vitest) — tests include the new `synthesizePortfolioRisk` unit tests (mocking `GoogleGenerativeAI`).
-
+- Supabase: `services/supabaseClient.ts` currently hard-codes a public URL & key and exports `isCloudConfigured()` — cloud flows in `App.tsx` check `isCloudConfigured()` and if user id does NOT start with `'LOCAL-'` before syncing. For cloud testing, either use the embedded keys (read-only) or replace with env-driven config.
 - Export: bundling logic and a README for shipped bundles is in `services/exportService.ts` — it writes a `gitignore_template.txt` and a `README.md` into zip bundles (Windows note about dotfiles).
 
 ## Common conventions & gotchas
@@ -87,7 +62,6 @@ Notes:
 - Manual validation: run `npm run dev` and interact with flows that use the modified service (e.g., Neural Vault search uses `searchVaultIntelligence`).
 - Use local dev overrides: update `localStorage` keys in the browser console to simulate records and user state for UI testing.
 - When touching cloud flows, test both `isCloudConfigured()` = true and false code paths.
-- CI: The repository includes `.github/workflows/ci.yml` which runs tests and builds on push/pull_request; ensure `VITE_GEMINI_API_KEY` is stored as a repository Secret so CI and Vercel builds pass the prebuild check.
 
 ## Safety & boundaries
 

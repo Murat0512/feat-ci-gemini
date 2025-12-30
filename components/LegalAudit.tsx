@@ -84,16 +84,27 @@ const LegalAudit: React.FC<LegalAuditProps> = ({
   };
 
   const processFile = async (file: File) => {
-    if (file.type !== 'application/pdf') {
+    // Lenient validation: check MIME type OR file extension
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
       alert("Invalid format. LexiScan requires a PDF handshake.");
       return;
     }
     setFileName(file.name);
     setIsAnalyzing(true);
     const reader = new FileReader();
+    reader.onerror = () => {
+      const errMsg = `File read error: ${reader.error?.message || 'Unknown'}`;
+      console.error(errMsg);
+      if (onError) onError(new Error(errMsg));
+      setIsAnalyzing(false);
+    };
     reader.onload = async () => {
-      const base64 = (reader.result as string).split(',')[1];
       try {
+        const base64 = (reader.result as string).split(',')[1];
+        if (!base64) {
+          throw new Error("Failed to encode file as base64");
+        }
         const result = await analyzeLegalDocument(base64, language as Language);
         const jurMatch = result.match(/\[JURISDICTION\]:\s*([^\n\r]+)/i);
         const jurisdiction = jurMatch ? jurMatch[1].trim() : undefined;
@@ -101,9 +112,8 @@ const LegalAudit: React.FC<LegalAuditProps> = ({
         if (onAuditComplete) await onAuditComplete(result, file.name, jurisdiction);
       } catch (err: any) { 
         if (onError) onError(err); 
-        else console.error(err);
-      } finally { 
-        setIsAnalyzing(false); 
+        else console.error("Audit error:", err);
+        setIsAnalyzing(false);
       }
     };
     reader.readAsDataURL(file);

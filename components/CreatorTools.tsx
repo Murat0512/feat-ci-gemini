@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import MarketingSuite from './MarketingSuite';
 import { Language } from '../types';
+import { supabase, isCloudConfigured } from '../services/supabaseClient';
 
 interface Order {
   id: string;
@@ -39,6 +40,8 @@ interface CreatorToolsProps {
   adminStats?: { revenue: number, licenses: number };
   language: Language;
   initialContext?: string;
+  userId?: string;
+  cloudAllowed?: boolean;
 }
 
 const CreatorTools: React.FC<CreatorToolsProps> = ({ 
@@ -52,7 +55,9 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
   price, 
   adminStats,
   language,
-  initialContext
+  initialContext,
+  userId,
+  cloudAllowed = true
 }) => {
   const [activeAdminTab, setActiveAdminTab] = useState<'fulfillment' | 'brand_lab'>('fulfillment');
   const [labSubTab, setLabSubTab] = useState<'generate' | 'archive'>('generate');
@@ -78,6 +83,9 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
   const [dispatchSuccess, setDispatchSuccess] = useState(false);
   const [orderToRefund, setOrderToRefund] = useState<Order | null>(null);
   const [selectedSnippet, setSelectedSnippet] = useState<BrandAsset | null>(null);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+
+  const cloudReady = cloudAllowed && isCloudConfigured() && !!userId && !userId.startsWith('LOCAL-') && !!supabase;
 
   const formattedPrice = `£${price}.00`;
   const terminalEndRef = useRef<HTMLDivElement>(null);
@@ -95,6 +103,32 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
   }, [brandArchive]);
 
   useEffect(() => {
+    const fetchCloudBrandArchive = async () => {
+      if (!cloudReady || !userId) return;
+      setIsCloudSyncing(true);
+      try {
+        const { data, error } = await supabase!.from('brand_assets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        if (error) throw error;
+        if (data) {
+          const mapped: BrandAsset[] = data.map((row: any) => ({
+            id: row.id,
+            type: row.type,
+            content: row.content,
+            prompt: row.prompt,
+            timestamp: row.timestamp || row.created_at || new Date().toISOString()
+          }));
+          setBrandArchive(mapped);
+        }
+      } catch (err) {
+        console.error('Cloud brand archive fetch failed', err);
+      } finally {
+        setIsCloudSyncing(false);
+      }
+    };
+    fetchCloudBrandArchive();
+  }, [cloudReady, userId]);
+
+  useEffect(() => {
     if (terminalLogs.length === 0) {
       setTerminalLogs([
         "[SYSTEM] Nexus Command Node v5.0.1 Stable.",
@@ -110,10 +144,41 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
   const handleAssetGenerated = (asset: any) => {
     const newAsset: BrandAsset = { 
       ...asset, 
-      id: asset.id || `ASSET-${Date.now()}` 
+      id: asset.id || `ASSET-${Date.now()}`,
+      timestamp: asset.timestamp || new Date().toISOString()
     };
     setBrandArchive(prev => [newAsset, ...prev]);
     setTerminalLogs(prev => [...prev, `[ARCHIVE] New ${asset.type.toUpperCase()} committed to neural vault.`]);
+
+    if (cloudReady && userId) {
+      (async () => {
+        try {
+          await supabase!.from('brand_assets').upsert({
+            id: newAsset.id,
+            user_id: userId,
+            type: newAsset.type,
+            content: newAsset.content,
+            prompt: newAsset.prompt,
+            timestamp: newAsset.timestamp
+          });
+        } catch (err) {
+          console.error('Cloud brand asset upsert failed', err);
+        }
+      })();
+    }
+  };
+
+  const handleDeleteBrandAsset = (id: string) => {
+    setBrandArchive(prev => prev.filter(a => a.id !== id));
+    if (cloudReady && userId) {
+      (async () => {
+        try {
+          await supabase!.from('brand_assets').delete().eq('id', id);
+        } catch (err) {
+          console.error('Cloud brand asset delete failed', err);
+        }
+      })();
+    }
   };
 
   const getCodeSnippet = (asset: BrandAsset) => {
@@ -288,19 +353,25 @@ const CreatorTools: React.FC<CreatorToolsProps> = ({
                         <div>
                           <h4 className="text-xl font-black text-white italic">{order.name}</h4>
                           <div className="flex items-center gap-3 mt-1">
-                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">{order.id}</span>
-                             <div className="w-1 h-1 bg-white/10 rounded-full" />
-                             <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500/60">{order.email}</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">{order.id}</span>
+                            <div className="w-1 h-1 bg-white/10 rounded-full" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500/60">{order.email}</span>
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-10">
                         <div className="text-right flex flex-col items-end">
-                           <span className="text-[9px] font-black text-gray-700 uppercase mb-1">Fee Captured</span>
-                           <p className="text-xl font-black text-white">{order.amount}</p>
+                          <span className="text-[9px] font-black text-gray-700 uppercase mb-1">Fee Captured</span>
+                          <p className="text-xl font-black text-white">{order.amount}</p>
                         </div>
                         {order.status === 'pending' ? (
-                          <button disabled={activeOrderId !== null && activeOrderId !== order.id} onClick={() => selectOrderForProcessing(order)} className={`px-10 py-4 text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl ${order.id === activeOrderId ? 'bg-indigo-600 text-white' : 'bg-white text-black hover:bg-indigo-600 hover:text-white'} disabled:opacity-30`}>{order.id === activeOrderId ? 'Processing...' : 'Secure'}</button>
+                          <button
+                            disabled={activeOrderId !== null && activeOrderId !== order.id}
+                            onClick={() => selectOrderForProcessing(order)}
+                            className={`px-10 py-4 text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl ${order.id === activeOrderId ? 'bg-indigo-600 text-white' : 'bg-white text-black hover:bg-indigo-600 hover:text-white'} disabled:opacity-30`}
+                          >
+                            {order.id === activeOrderId ? 'Processing...' : 'Secure'}
+                          </button>
                         ) : (
                           <div className="px-6 py-3 bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-xl border border-white/5">{order.status}</div>
                         )}

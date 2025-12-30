@@ -65,7 +65,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterSuite, isActivated }) 
   };
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white selection:bg-indigo-500/30 overflow-x-hidden relative flex flex-col">
+    <div className="min-h-screen bg-[#0a0a1f] text-white selection:bg-indigo-500/30 overflow-x-hidden relative">
       {/* Cinematic Overlays */}
       <div 
         className="fixed inset-0 pointer-events-none z-[1] transition-opacity duration-1000 opacity-60"
@@ -112,9 +112,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterSuite, isActivated }) 
             </div>
             <button 
               onClick={onEnterSuite}
-              className="px-8 py-3 bg-white text-black text-[11px] font-black uppercase tracking-widest rounded-full hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-3 group shadow-xl active:scale-95"
+              className="px-8 py-3 bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest rounded-full hover:bg-indigo-700 transition-all flex items-center gap-3 group shadow-xl shadow-indigo-600/30 active:scale-95"
+              title="Access Nerve Center Dashboard"
             >
-              {isActivated ? 'Nerve Center' : 'Establish Link'} 
+              {isActivated ? '⚡ Dashboard' : '🔗 Establish Link'} 
               <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </button>
           </div>
@@ -126,11 +127,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterSuite, isActivated }) 
       </nav>
 
       {/* Hero Section: Explanatory Upgrade */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-8">
+      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden px-8 pt-20">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl h-[500px] bg-indigo-600/5 blur-[160px] rounded-full animate-pulse-soft pointer-events-none" />
         
-        <div className="max-w-7xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black tracking-[0.3em] uppercase mb-12 animate-in fade-in slide-in-from-top-6 duration-700">
+        <div className="max-w-7xl mx-auto text-center relative z-10 flex-1 flex flex-col justify-center">
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black tracking-[0.3em] uppercase mb-12 animate-in fade-in slide-in-from-top-6 duration-700 mx-auto">
             <Terminal size={12} /> Legal Scrutiny & Brand Synthesis Lab
           </div>
           
@@ -147,12 +148,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterSuite, isActivated }) 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-600">
             <button 
               onClick={onEnterSuite}
-              className="group px-16 py-7 bg-white text-black font-black rounded-[32px] text-xl hover:bg-indigo-600 hover:text-white transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] hover:shadow-indigo-600/20 active:scale-95 flex items-center gap-4"
+              className="group relative px-16 py-8 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white font-black rounded-[32px] text-xl hover:from-indigo-500 hover:to-indigo-600 transition-all shadow-[0_30px_60px_-15px_rgba(79,70,229,0.4)] hover:shadow-[0_40px_80px_-15px_rgba(79,70,229,0.5)] active:scale-95 flex items-center gap-4 border border-indigo-500/50 hover:border-indigo-400"
+              title="Access Nerve Center - Your AI Legal Command Hub"
             >
-              Start Scrutiny <Zap size={22} fill="currentColor" className="group-hover:scale-125 transition-transform"/>
+              <span>Access Nerve Center</span>
+              <Zap size={22} fill="currentColor" className="group-hover:scale-125 transition-transform"/>
+              <div className="absolute -inset-1 bg-indigo-600/50 rounded-[32px] blur-lg opacity-0 group-hover:opacity-30 transition-opacity -z-10" />
             </button>
-            <button onClick={() => scrollTo('intelligence')} className="px-12 py-7 bg-white/5 border border-white/10 text-white font-black rounded-[32px] text-xl hover:bg-white/10 transition-all flex items-center gap-3">
-              Learn Purpose <Command size={18} />
+            <button onClick={() => scrollTo('intelligence')} className="px-12 py-8 bg-white/5 border border-white/20 text-white font-black rounded-[32px] text-xl hover:bg-white/10 hover:border-white/30 transition-all flex items-center gap-3">
+              Learn More <Command size={18} />
             </button>
           </div>
         </div>
@@ -163,7 +167,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterSuite, isActivated }) 
       </section>
 
       {/* Intelligence Section: Interactive Audit Simulator */}
-      <section id="intelligence" className="py-40 md:py-60 px-8 border-t border-white/5 bg-[#030303] relative overflow-hidden">
+      <section id="intelligence" className="py-40 md:py-60 px-8 border-t border-white/5 bg-[#0f0f2e] relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
             <div className="reveal-on-scroll">
@@ -338,10 +342,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterSuite, isActivated }) 
           <h2 className="text-6xl md:text-9xl font-black uppercase tracking-tighter mb-16 leading-[0.85]">COMMAND THE <br /><span className="text-indigo-500">ADVANTAGE.</span></h2>
           <button 
             onClick={onEnterSuite}
-            className="group px-20 py-8 bg-white text-black font-black rounded-[40px] text-2xl md:text-3xl hover:bg-indigo-600 hover:text-white transition-all shadow-2xl active:scale-95 flex items-center gap-6 mx-auto relative overflow-hidden"
+            className="group relative px-20 py-8 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white font-black rounded-[40px] text-2xl md:text-3xl hover:from-indigo-500 hover:to-indigo-600 transition-all shadow-[0_30px_80px_-15px_rgba(79,70,229,0.4)] active:scale-95 flex items-center gap-6 mx-auto border border-indigo-500/50 hover:border-indigo-400"
+            title="Launch Nerve Center Dashboard"
           >
-            Enter Nerve Center
-            <Zap size={32} fill="currentColor" className="group-hover:rotate-12 transition-transform" />
+            <span>Launch Nerve Center</span>
+            <Zap size={32} fill="currentColor" className="group-hover:rotate-12 group-hover:scale-110 transition-transform" />
+            <div className="absolute -inset-1 bg-indigo-600/50 rounded-[40px] blur-lg opacity-0 group-hover:opacity-30 transition-opacity -z-10" />
           </button>
           <p className="mt-12 text-gray-600 font-black uppercase text-[10px] tracking-[0.5em]">Enterprise Neural Licenses Available</p>
         </div>

@@ -43,3 +43,28 @@ describe('synthesizePortfolioRisk', () => {
     await expect(svc.synthesizePortfolioRisk(sampleAudits, 'English')).rejects.toThrow('model failed');
   });
 });
+
+describe('generateSonicIdentity', () => {
+  let originalBtoa: any;
+
+  beforeEach(() => {
+    originalBtoa = (globalThis as any).btoa;
+    // Provide a Node-safe btoa for the test environment
+    if (!originalBtoa) {
+      (globalThis as any).btoa = (input: string) => Buffer.from(input, 'binary').toString('base64');
+    }
+  });
+
+  afterEach(() => {
+    (globalThis as any).btoa = originalBtoa;
+  });
+
+  it('returns a deterministic placeholder and encodes input', async () => {
+    const out = await svc.generateSonicIdentity('hello-world');
+    expect(out.startsWith('AUDIO_SIGNAL_PLACEHOLDER_')).toBe(true);
+    expect(out).toContain('AUDIO_SIGNAL_PLACEHOLDER_');
+    // Same input yields same output
+    const out2 = await svc.generateSonicIdentity('hello-world');
+    expect(out2).toBe(out);
+  });
+});

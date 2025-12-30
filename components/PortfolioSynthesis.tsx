@@ -22,7 +22,8 @@ const PortfolioSynthesis: React.FC<PortfolioSynthesisProps> = ({ audits, languag
 
   const handleSynthesize = async () => {
     if (audits.length < 2) {
-      alert("At least two audit signatures are required for macro-synthesis.");
+      console.warn("Portfolio synthesis requires at least 2 audits");
+      alert("⚠️ Synthesis Requirement: Minimum 2 audit signatures needed.");
       return;
     }
     setIsSynthesizing(true);

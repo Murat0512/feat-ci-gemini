@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase, isCloudConfigured } from '../services/supabaseClient';
-import { ShieldCheck, Mail, Lock, ArrowRight, Fingerprint, UserPlus, LogIn, Loader2, Zap, Activity, Shield, Eye, EyeOff, RefreshCw, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, ArrowRight, Fingerprint, UserPlus, LogIn, Loader2, Zap, Activity, Shield, Eye, EyeOff, RefreshCw, AlertCircle, Wifi, WifiOff, CheckCircle2 } from 'lucide-react';
 
 interface AuthGateProps {
   onAuthSuccess: (user: { email: string; name: string; id?: string }) => void;
+  cloudAllowed?: boolean;
 }
 
-const AuthGate: React.FC<AuthGateProps> = ({ onAuthSuccess }) => {
+const AuthGate: React.FC<AuthGateProps> = ({ onAuthSuccess, cloudAllowed = true }) => {
   const [mode, setMode] = useState<'login' | 'register'>('register'); // Default to register for new users
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -17,11 +18,11 @@ const AuthGate: React.FC<AuthGateProps> = ({ onAuthSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
-  const cloudActive = isCloudConfigured();
+  const cloudActive = cloudAllowed && isCloudConfigured();
 
   useEffect(() => {
     const checkConnection = async () => {
-      if (!supabase) {
+      if (!cloudActive || !supabase) {
         setIsOnline(false);
         return;
       }
@@ -31,7 +32,7 @@ const AuthGate: React.FC<AuthGateProps> = ({ onAuthSuccess }) => {
       else setIsOnline(true);
     };
     checkConnection();
-  }, []);
+  }, [cloudActive]);
 
   const toggleMode = () => {
     setMode(prev => prev === 'login' ? 'register' : 'login');
@@ -65,15 +66,33 @@ const AuthGate: React.FC<AuthGateProps> = ({ onAuthSuccess }) => {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { name: name } }
+          options: { 
+            data: { name: name },
+            emailRedirectTo: window.location.origin
+          }
         });
         
         if (error) throw error;
 
-        if (data.user && data.session) {
-          onAuthSuccess({ email: data.user.email!, name: name, id: data.user.id });
-        } else if (data.user) {
-          setErrorMessage("INITIALIZATION SENT. CHECK YOUR EMAIL TO ACTIVATE YOUR IDENTITY.");
+        // Supabase always requires email confirmation unless disabled in settings
+        if (data.user) {
+          if (data.session) {
+            // Auto-confirmed (only if email confirmation is disabled in Supabase settings)
+            onAuthSuccess({ email: data.user.email!, name: name, id: data.user.id });
+          } else {
+            // Email confirmation required (default behavior)
+            setIsProcessing(false);
+            setErrorMessage("✅ REGISTRATION SUCCESSFUL! Check your email to confirm your account and activate your neural identity.");
+            setEmail('');
+            setPassword('');
+            setName('');
+            // Auto-switch to login mode after 3 seconds
+            setTimeout(() => {
+              setMode('login');
+              setErrorMessage('');
+            }, 4000);
+            return;
+          }
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -142,8 +161,8 @@ const AuthGate: React.FC<AuthGateProps> = ({ onAuthSuccess }) => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             {errorMessage && (
-              <div className="p-5 rounded-3xl border border-red-500/20 bg-red-500/10 text-[10px] font-black text-center italic uppercase tracking-widest text-red-500 flex items-center justify-center gap-2 animate-in shake duration-300">
-                <AlertCircle size={14} />
+              <div className={`p-5 rounded-3xl border ${errorMessage.includes('✅') ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500' : 'border-red-500/20 bg-red-500/10 text-red-500'} text-[10px] font-black text-center italic uppercase tracking-widest flex items-center justify-center gap-2 animate-in ${errorMessage.includes('✅') ? 'slide-in-from-top-4' : 'shake'} duration-300`}>
+                {errorMessage.includes('✅') ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
                 {errorMessage}
               </div>
             )}

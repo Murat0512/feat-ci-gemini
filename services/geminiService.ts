@@ -111,22 +111,84 @@ export const runHighTableConsensus = async (auditContext: string, language: Lang
 });
 
 // TODO: Implement a robust clause rewrite prompt and return a structured rewritten clause with rationale and severity tags.
-export const generateClauseRewrite = async (clause: string, riskType: string = '', language: Language = 'English') => `Rewritten clause (${riskType}): ${clause}`;
-export const generateRemediatedDraft = async (clause: string, language: Language = 'English') => `Remediated draft for clause: ${clause}`; 
+export const generateClauseRewrite = async (clause: string, riskType: string = '', language: Language = 'English') => {
+  const prompt = [
+    `You are a legal language expert. Rewrite the following clause to mitigate ${riskType || 'legal risk'} in ${language}.`,
+    `Original clause:\n${clause}`,
+    `Provide: 1) Rewritten clause, 2) Key changes made, 3) Risk reduction rationale. Use markdown.`
+  ];
+  return executeWithRetry(async (model) => {
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  });
+};
+
+export const generateRemediatedDraft = async (clause: string, language: Language = 'English') => {
+  const prompt = [
+    `You are a contract remediation specialist. Create a fully remediated (safe) version of this clause in ${language}.`,
+    `Original:\n${clause}`,
+    `Provide a complete, production-ready clause with all identified risks eliminated. Use markdown.`
+  ];
+  return executeWithRetry(async (model) => {
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  });
+}; 
 
 export const generateForensicManifest = async (audits: HistoricAudit[], language: Language = 'English') => {
-  const ids = audits.map(a => a.id).slice(0, 5).join(', ');
-  return `# Forensic Manifest\n## Scope: ${audits.length} events\n- Sample IDs: ${ids}`;
+  const auditSummary = audits.map(a => `- ${a.fileName || a.id}: Risk ${a.score ?? 0}%`).join('\n');
+  const prompt = [
+    `You are a legal forensics expert. Create a comprehensive forensic manifest in ${language} for these audit records.`,
+    `Audits:\n${auditSummary}`,
+    `Include: scope, key findings, risk clusters, and litigation readiness assessment. Return markdown.`
+  ];
+  return executeWithRetry(async (model) => {
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  });
 };
 export const runNeuralMaskScan = async (data: string, language: Language = 'English') => `Mask scan results (${language})`;
 export const evaluateSandboxComposition = async (params: any, language: Language = 'English') => ({ score: 72, risks: ['dependency-conflict', 'undocumented-feature'], conflicts: ['pkgA@1.2 vs pkgA@2.0'] });
 export const runVoidScan = async (context: string, language: Language = 'English') => `Void scan completed for ${context} (${language})`; 
 
 // TODO: Implement neural redline generation with line-level change sets and machine-readable metadata.
-export const generateNeuralRedline = async (baseDoc: string, counterDoc: string, language: Language = 'English') => `Redline for base vs counter (lang=${language})`; 
-export const forecastLitigationVector = async (doc: string) => `Probability: ${Math.round(Math.random()*100)}%: Simulated rationale and precedent summary.`;
+export const generateNeuralRedline = async (baseDoc: string, counterDoc: string, language: Language = 'English') => {
+  const prompt = [
+    `You are a contract comparison expert. Generate a detailed redline in ${language} comparing these two documents.`,
+    `Base document:\n${baseDoc.substring(0, 1000)}...`,
+    `Counter document:\n${counterDoc.substring(0, 1000)}...`,
+    `Provide line-by-line differences with risk severity and recommended changes. Use markdown with [REDLINE_SEVERITY]: HIGH/MEDIUM/LOW markers.`
+  ];
+  return executeWithRetry(async (model) => {
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  });
+};
+
+export const forecastLitigationVector = async (doc: string) => {
+  const prompt = [
+    `You are a litigation risk forecaster. Analyze this document for litigation vectors.`,
+    `Document:\n${doc.substring(0, 1500)}...`,
+    `Provide: 1) Litigation probability %, 2) Primary dispute vectors, 3) Precedent risks, 4) Defense strength assessment. Use markdown.`
+  ];
+  return executeWithRetry(async (model) => {
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  });
+};
+
 // TODO: Replace with a model-backed risk assessment that returns numeric scores per category and a short narrative.
-export const generateRiskAssessment = async (doc: string, language: Language = 'English') => `Risk assessment for ${doc}`;
+export const generateRiskAssessment = async (doc: string, language: Language = 'English') => {
+  const prompt = [
+    `You are a contract risk assessment specialist. Assess all risks in this document in ${language}.`,
+    `Document:\n${doc.substring(0, 1500)}...`,
+    `Provide numeric risk scores (0-100) for: liability, compliance, commercial, operational. Include overall narrative and top 5 risk items. Use markdown with [RISK_CATEGORY]: <score> markers.`
+  ];
+  return executeWithRetry(async (model) => {
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  });
+};
 
 export const runSovereignGraph = async (query: string, language: Language = 'English') => ({ nodes: [], edges: [], query, language });
 export const getGeoLegalIntelligence = async (lat: number, lon: number, language: Language = 'English') => ({ summary: `Geo-legal intelligence for (${lat},${lon}) in ${language}` });
@@ -154,10 +216,48 @@ export const analyzePhysicalDocument = async (base64: string, language: Language
 export const searchVaultIntelligence = async (audits: HistoricAudit[], query: string) => audits.map(a => a.id);
 
 // Keep placeholder compatibility (single set)
-export const generateMarketingAssets = async (p: string, l: Language = 'English') => "Assets Generated.";
-export const generateMarketingVisual = async (p: string) => "https://images.unsplash.com/photo-1550751827-4bd374c3f58b";
-export const generateSonicIdentity = async (t: string) => "AUDIO_SIGNAL";
-export const generateSovereignVideo = async (p: string, onUpdate: (m: string) => void) => { onUpdate("Rendering..."); return ""; };
+export const generateMarketingAssets = async (p: string, l: Language = 'English') => {
+  const prompt = [
+    `You are a high-conversion marketing copywriter. Generate compelling marketing copy in ${l} for: ${p}`,
+    `Produce: 1) Email campaign headline, 2) Twitter/X post, 3) LinkedIn thought leadership snippet, 4) Web page value prop. Be concise and persuasive.`
+  ];
+  return executeWithRetry(async (model) => {
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  });
+};
+
+export const generateMarketingVisual = async (p: string) => {
+  // Return a random high-quality unsplash image that matches the prompt concept
+  const topics = p.toLowerCase().includes('legal') ? 'law' : p.toLowerCase().includes('tech') ? 'technology' : 'business';
+  const imageIds = {
+    law: 'photo-1552664730-d307ca884978',
+    technology: 'photo-1550751827-4bd374c3f58b',
+    business: 'photo-1552664730-d307ca884978'
+  };
+  return `https://images.unsplash.com/${(imageIds as any)[topics]}`;
+};
+
+export const generateSonicIdentity = async (t: string) => {
+  // Return a placeholder audio indicator (in real use, this would call a TTS API)
+  const encodeBase64 = (text: string) => {
+    const bytes = new TextEncoder().encode(text);
+    let bin = '';
+    bytes.forEach((b) => { bin += String.fromCharCode(b); });
+    return btoa(bin);
+  };
+  return 'AUDIO_SIGNAL_PLACEHOLDER_' + encodeBase64(t).substring(0, 16);
+};
+
+export const generateSovereignVideo = async (p: string, onUpdate: (m: string) => void) => {
+  // Simulate video generation steps with progress updates
+  const steps = ['Analyzing script', 'Generating frames', 'Compositing audio', 'Rendering final'];
+  for (const step of steps) {
+    onUpdate(`${step}...`);
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return ''; // Placeholder return
+};
 
 // export a minimal check function (backwards compatible)
 export const checkComplianceLegacy = checkCompliance;

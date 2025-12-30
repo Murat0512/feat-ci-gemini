@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Layers, Plus, Calendar, ShieldCheck, ChevronRight, Archive, LayoutGrid, X, Search, MoreHorizontal, FolderPlus, DatabaseZap, Cloud } from 'lucide-react';
+import { Layers, Plus, Calendar, ShieldCheck, ChevronRight, Archive, LayoutGrid, X, Search, MoreHorizontal, FolderPlus, DatabaseZap, Cloud, Trash2, AlertTriangle } from 'lucide-react';
 import { Project } from '../types';
 
 interface ProjectHubProps {
@@ -16,6 +16,7 @@ const ProjectHub: React.FC<ProjectHubProps> = ({ projects, currentProjectId, onS
   const [projectName, setProjectName] = useState('');
   const [projectDesc, setProjectDesc] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -67,6 +68,13 @@ const ProjectHub: React.FC<ProjectHubProps> = ({ projects, currentProjectId, onS
             onClick={() => onSelectProject(project.id)}
             className={`group bg-[#0a0a0a] border rounded-[48px] p-10 flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden shadow-2xl h-[340px] ${currentProjectId === project.id ? 'border-indigo-500 bg-indigo-500/[0.03] shadow-indigo-500/20 scale-[1.02]' : 'border-white/5 hover:border-white/20'}`}
           >
+            <button
+              onClick={(e) => { e.stopPropagation(); setConfirmId(project.id); }}
+              className="absolute top-6 right-6 text-gray-700 hover:text-red-500 transition-colors"
+              title="Delete workspace"
+            >
+              <Trash2 size={18} />
+            </button>
             {currentProjectId === project.id ? (
                <div className="absolute top-8 right-8 w-3 h-3 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.8)] animate-pulse" />
             ) : (
@@ -130,6 +138,22 @@ const ProjectHub: React.FC<ProjectHubProps> = ({ projects, currentProjectId, onS
               </div>
               <button type="submit" className="w-full py-7 bg-white text-black font-black rounded-[32px] text-xl uppercase tracking-tighter italic shadow-2xl hover:bg-indigo-600 hover:text-white transition-all active:scale-95">Establish Link</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {confirmId && (
+        <div className="fixed inset-0 z-[2100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-2xl">
+          <div className="w-full max-w-md bg-[#0a0a0a] border border-red-500/30 rounded-3xl p-10 space-y-6 shadow-2xl">
+            <div className="flex items-center gap-3 text-red-400">
+              <AlertTriangle size={20} />
+              <h3 className="text-xl font-black uppercase">Delete Workspace?</h3>
+            </div>
+            <p className="text-sm text-gray-400 leading-relaxed">This will remove the workspace and all linked audits. This action cannot be undone.</p>
+            <div className="flex items-center justify-end gap-3">
+              <button onClick={() => setConfirmId(null)} className="px-4 py-2 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Cancel</button>
+              <button onClick={() => { onDeleteProject(confirmId); setConfirmId(null); }} className="px-5 py-3 bg-red-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-red-500 transition-all shadow-lg">Delete</button>
+            </div>
           </div>
         </div>
       )}

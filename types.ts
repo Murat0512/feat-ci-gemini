@@ -32,7 +32,7 @@ export enum AppView {
   SOVEREIGN_MAP = 'sovereign_map',
   NEURAL_MASK = 'neural_mask',
   NEURAL_EYE = 'neural_eye',
-  NEURAL_DEPLOY = 'neural_deploy'
+  ADMIN = 'admin'
 }
 
 export type Language = 'English' | 'Spanish' | 'French' | 'German' | 'Chinese' | 'Japanese' | 'Portuguese';

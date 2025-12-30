@@ -15,7 +15,8 @@ const CourtroomProjection: React.FC<CourtroomProjectionProps> = ({ auditContext,
 
   const handleRunProjection = async () => {
     if (!auditContext) {
-      alert("A Tactical Audit is required to provide document context.");
+      console.warn("Courtroom projection requires audit context");
+      alert("⚖️ Context Required: Complete a Tactical Audit first to enable judicial projection.");
       return;
     }
     setIsProjecting(true);

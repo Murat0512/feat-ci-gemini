@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense, useRef, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import AuthGate from './components/AuthGate';
+import TermsModal from './components/TermsModal';
 import LandingPage from './components/LandingPage';
 import { AppView, Language, RiskProfile, HistoricAudit, GlobalProvision, Project } from './types';
 import { supabase, isCloudConfigured } from './services/supabaseClient';
@@ -11,8 +12,8 @@ import {
   Terminal, Activity, TrendingUp, ShieldCheck, Radar, Users, 
   ArrowUpRight, CheckCircle2, Info, Bell, Shield, ArrowRight, History, Fingerprint, BrainCircuit, GitCompare, Trophy,
   Activity as ActivityIcon, LayoutGrid, Rocket, Target, ShieldAlert, HeartPulse, Sparkles, Star, Swords, Presentation, Key, Archive,
-  ExternalLink, Search, Loader2, Globe, Cpu, Clock, ChevronRight, DatabaseZap, HardDrive, Cloud, CloudOff, Layers, MousePointer2, TrendingDown, Hammer, Map, Globe2,
-  Book, FileDiff, Command, Clapperboard, Wifi, BarChart3, ShieldEllipsis, MessageSquare, AlertCircle, Radio, Gavel, ShieldX, Network, Edit3, Ghost, Camera
+  ExternalLink, Search, Loader2, Cpu, Clock, ChevronRight, DatabaseZap, HardDrive, Cloud, CloudOff, Layers, MousePointer2, TrendingDown, Hammer, Map, Globe2,
+  Book, FileDiff, Command, Clapperboard, Wifi, BarChart3, ShieldEllipsis, MessageSquare, AlertCircle, Radio, Gavel, ShieldX, Network, Edit3, Ghost, Camera, User, ChevronDown
 } from 'lucide-react';
 
 const LegalAudit = lazy(() => import('./components/LegalAudit'));
@@ -45,14 +46,71 @@ const PortfolioSynthesis = lazy(() => import('./components/PortfolioSynthesis'))
 const SettingsView = lazy(() => import('./components/SettingsView'));
 const SovereignMap = lazy(() => import('./components/SovereignMap'));
 const NeuralMask = lazy(() => import('./components/NeuralMask'));
-const NeuralDeploy = lazy(() => import('./components/NeuralDeploy'));
 const NeuralEye = lazy(() => import('./components/NeuralEye'));
+const AdminPanel = lazy(() => import('./components/AdminPanel'));
 
 interface Toast {
   id: number;
   message: string;
   type: 'success' | 'info' | 'error';
 }
+
+interface ProfileData {
+  fullName: string;
+  email: string;
+  phone: string;
+  company: string;
+  jobTitle: string;
+  location: string;
+  bio: string;
+  notifications: boolean;
+}
+
+const TERMS_VERSION = '2025-01-01';
+const TERMS_STORAGE_KEY = 'lexiscan_terms_version';
+const TERMS_ACCEPTED_AT_KEY = 'lexiscan_terms_accepted_at';
+const SESSION_ID_KEY = 'lexiscan_session_id';
+
+const readLocalProfile = (defaults?: { name?: string; email?: string }): ProfileData => {
+  try {
+    return {
+      fullName: localStorage.getItem('user_fullName') || defaults?.name || '',
+      email: defaults?.email || localStorage.getItem('user_email') || '',
+      phone: localStorage.getItem('user_phone') || '',
+      company: localStorage.getItem('user_company') || '',
+      jobTitle: localStorage.getItem('user_jobTitle') || '',
+      location: localStorage.getItem('user_location') || '',
+      bio: localStorage.getItem('user_bio') || '',
+      notifications: (localStorage.getItem('user_notifications') || 'true') === 'true'
+    };
+  } catch {
+    return {
+      fullName: defaults?.name || '',
+      email: defaults?.email || '',
+      phone: '',
+      company: '',
+      jobTitle: '',
+      location: '',
+      bio: '',
+      notifications: true
+    };
+  }
+};
+
+const persistProfileLocal = (profile: ProfileData) => {
+  try {
+    localStorage.setItem('user_fullName', profile.fullName);
+    localStorage.setItem('user_email', profile.email);
+    localStorage.setItem('user_phone', profile.phone);
+    localStorage.setItem('user_company', profile.company);
+    localStorage.setItem('user_jobTitle', profile.jobTitle);
+    localStorage.setItem('user_location', profile.location);
+    localStorage.setItem('user_bio', profile.bio);
+    localStorage.setItem('user_notifications', profile.notifications ? 'true' : 'false');
+  } catch {
+    // Swallow localStorage issues to avoid blocking cloud sync
+  }
+};
 
 const ModuleLoader = ({ message = "Synchronizing Command Link..." }: { message?: string }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in duration-500">
@@ -84,38 +142,54 @@ const RiskLattice: React.FC<{ profile: RiskProfile }> = ({ profile }) => {
   const pathData = points.map((p, i) => getCoordinates(i, p.value)).join(' ');
 
   return (
-    <div className="relative w-44 h-44 mx-auto">
-      <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-         <div className="w-16 h-16 border border-indigo-500/20 rounded-full animate-ping" />
-         <div className="absolute w-20 h-20 border border-indigo-500/10 rounded-full animate-spin-slow" />
+    <div className="w-full space-y-8">
+      <div className="relative w-full max-w-md mx-auto h-80">
+        <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none">
+           <div className="w-24 h-24 border-2 border-indigo-500/30 rounded-full animate-ping" />
+           <div className="absolute w-32 h-32 border border-indigo-500/15 rounded-full animate-spin-slow" />
+        </div>
+        
+        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_20px_rgba(99,102,241,0.5)]">
+          {[25, 50, 75, 100].map(r => (
+            <polygon key={r} points={points.map((_, i) => getCoordinates(i, r)).join(' ')} fill="none" stroke="#6366f1" strokeWidth="0.3" strokeOpacity="0.25" />
+          ))}
+          {points.map((_, i) => (
+            <line key={i} x1="50" y1="50" x2={getCoordinates(i, 100).split(',')[0]} y2={getCoordinates(i, 100).split(',')[1]} stroke="#6366f1" strokeWidth="0.3" strokeOpacity="0.2" />
+          ))}
+          <polygon points={pathData} fill="rgba(99, 102, 241, 0.25)" stroke="#6366f1" strokeWidth="1.5" className="animate-pulse" />
+          {points.map((p, i) => {
+            const [x, y] = getCoordinates(i, p.value).split(',');
+            return <circle key={i} cx={x} cy={y} r="2.5" fill={p.value > 70 ? '#f43f5e' : '#6366f1'} className="drop-shadow-lg" />;
+          })}
+        </svg>
+        
+        <style>{`
+          @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          .animate-spin-slow { animation: spin-slow 12s linear infinite; }
+        `}</style>
       </div>
-      
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_15px_rgba(99,102,241,0.3)]">
-        {[25, 50, 75, 100].map(r => (
-          <polygon key={r} points={points.map((_, i) => getCoordinates(i, r)).join(' ')} fill="none" stroke="white" strokeWidth="0.1" strokeOpacity="0.1" />
-        ))}
-        {points.map((_, i) => (
-          <line key={i} x1="50" y1="50" x2={getCoordinates(i, 100).split(',')[0]} y2={getCoordinates(i, 100).split(',')[1]} stroke="white" strokeWidth="0.1" strokeOpacity="0.1" />
-        ))}
-        <polygon points={pathData} fill="rgba(99, 102, 241, 0.2)" stroke="#6366f1" strokeWidth="1" className="animate-pulse" />
-        {points.map((p, i) => {
-          const [x, y] = getCoordinates(i, p.value).split(',');
-          return <circle key={i} cx={x} cy={y} r="1.5" fill={p.value > 70 ? '#f43f5e' : '#6366f1'} />;
-        })}
-      </svg>
-      {points.map((p, i) => {
-        const [x, y] = getCoordinates(i, 120).split(',');
-        return (
-          <div key={i} className="absolute text-[5px] font-black uppercase tracking-widest text-gray-700" style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}>
-            {p.label}
+
+      {/* Risk Labels with Values */}
+      <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+        {points.map((p, i) => (
+          <div key={i} className={`p-4 rounded-2xl border text-center transition-all ${
+            p.value > 70 
+              ? 'bg-red-500/15 border-red-500/40' 
+              : p.value > 40 
+              ? 'bg-yellow-500/15 border-yellow-500/40'
+              : 'bg-indigo-500/15 border-indigo-500/40'
+          }`}>
+            <div className="text-xs font-black uppercase tracking-wider text-gray-300 mb-2">{p.label}</div>
+            <div className={`text-2xl font-black ${
+              p.value > 70 
+                ? 'text-red-400' 
+                : p.value > 40 
+                ? 'text-yellow-400'
+                : 'text-indigo-400'
+            }`}>{p.value.toFixed(0)}</div>
           </div>
-        );
-      })}
-      
-      <style>{`
-        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin-slow 12s linear infinite; }
-      `}</style>
+        ))}
+      </div>
     </div>
   );
 };
@@ -203,12 +277,35 @@ const App: React.FC = () => {
     } catch { return []; }
   });
 
+  const [privacyMode, setPrivacyMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('lexiscan_privacy_mode');
+      if (saved === 'off') return false;
+      return true;
+    } catch {
+      return true;
+    }
+  });
+
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean>(() => {
+    try {
+      const savedVersion = localStorage.getItem(TERMS_STORAGE_KEY);
+      return savedVersion === TERMS_VERSION;
+    } catch {
+      return false;
+    }
+  });
+
+  const [usageStats, setUsageStats] = useState<{ total: number; last7d: number } | null>(null);
+
   const [user, setUser] = useState<{ email: string; name: string; id: string } | null>(() => {
     try {
       const saved = localStorage.getItem('lexiscan_user');
       return saved ? JSON.parse(saved) : null;
     } catch { return null; }
   });
+
+  const [profile, setProfile] = useState<ProfileData>(() => readLocalProfile());
 
   const [auditHistory, setAuditHistory] = useState<HistoricAudit[]>([]);
   const [latestAuditResult, setLatestAuditResult] = useState<string | null>(null);
@@ -219,14 +316,87 @@ const App: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [dashboardSearch, setDashboardSearch] = useState("");
   const [isCreatorMode, setIsCreatorMode] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const cloudActive = isCloudConfigured();
+  const cloudActive = isCloudConfigured() && !privacyMode;
+  const ownerEmail = (import.meta.env.VITE_OWNER_EMAIL || '').toLowerCase();
+  const isOwner = !!ownerEmail && (user?.email || '').toLowerCase() === ownerEmail;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('lexiscan_privacy_mode', privacyMode ? 'on' : 'off');
+    } catch {
+      // Ignore localStorage write errors
+    }
+  }, [privacyMode]);
+
+  useEffect(() => {
+    setProfile(readLocalProfile(user || undefined));
+  }, [user]);
 
   const addToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'info') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
+
+  const handleAcceptTerms = useCallback(() => {
+    try {
+      localStorage.setItem(TERMS_STORAGE_KEY, TERMS_VERSION);
+      localStorage.setItem(TERMS_ACCEPTED_AT_KEY, new Date().toISOString());
+    } catch {
+      // Ignore storage failures
+    }
+    setHasAcceptedTerms(true);
+    addToast('Terms accepted. Proceed with caution.', 'info');
+  }, [addToast]);
+
+  const ensureSessionId = useCallback(() => {
+    try {
+      const existing = localStorage.getItem(SESSION_ID_KEY);
+      if (existing) return existing;
+      const newId = `SESS-${crypto.randomUUID?.() || Date.now().toString(36)}`;
+      localStorage.setItem(SESSION_ID_KEY, newId);
+      return newId;
+    } catch {
+      return `SESS-${Date.now()}`;
+    }
+  }, []);
+
+  const togglePrivacyMode = () => {
+    setPrivacyMode(prev => {
+      const next = !prev;
+      if (next) {
+        if (supabase) {
+          supabase.auth.signOut().catch(() => {});
+        }
+        if (user && !user.id.startsWith('LOCAL-')) {
+          const localUser = { ...user, id: `LOCAL-${Date.now()}` };
+          setUser(localUser);
+          try {
+            localStorage.setItem('lexiscan_user', JSON.stringify(localUser));
+          } catch {
+            // Ignore write errors when pivoting to local-only identity
+          }
+        }
+      }
+      addToast(next ? 'Privacy Mode enabled. Cloud links paused.' : 'Cloud sync re-enabled.', next ? 'info' : 'success');
+      return next;
+    });
+  };
+
+  const fetchUsageStats = useCallback(async () => {
+    if (!cloudActive || !supabase || !isOwner) return;
+    try {
+      const { count: total } = await supabase.from('usage_events').select('*', { count: 'exact', head: true });
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: last7d } = await supabase.from('usage_events').select('*', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo);
+      setUsageStats({ total: total || 0, last7d: last7d || 0 });
+    } catch (err) {
+      console.error('Usage stats fetch failed', err);
+    }
+  }, [cloudActive, isOwner]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -237,6 +407,16 @@ const App: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -299,7 +479,7 @@ const App: React.FC = () => {
   }, [provisions]);
 
   const fetchCloudData = useCallback(async (userId: string) => {
-    if (!supabase || !userId || userId.startsWith('LOCAL-')) return;
+    if (!cloudActive || !supabase || !userId || userId.startsWith('LOCAL-')) return;
     setIsSyncing(true);
     try {
       const { data: aData } = await supabase.from('audits').select('*').eq('user_id', userId).order('created_at', { ascending: false });
@@ -321,8 +501,25 @@ const App: React.FC = () => {
           id: p.id, category: p.category, originalClause: p.original_clause, safeClause: p.safe_clause, timestamp: new Date(p.created_at).toLocaleString(), tags: p.tags || []
         })));
       }
+
+      const { data: profileRows } = await supabase.from('profiles').select('*').eq('user_id', userId).limit(1);
+      if (profileRows && profileRows.length > 0) {
+        const r = profileRows[0];
+        const mapped: ProfileData = {
+          fullName: r.full_name || r.name || '',
+          email: r.email || user?.email || '',
+          phone: r.phone || '',
+          company: r.company || '',
+          jobTitle: r.job_title || '',
+          location: r.location || '',
+          bio: r.bio || '',
+          notifications: typeof r.notifications === 'boolean' ? r.notifications : true
+        };
+        setProfile(mapped);
+        persistProfileLocal(mapped);
+      }
     } catch (err) { console.error(err); } finally { setIsSyncing(false); }
-  }, []);
+  }, [cloudActive, user]);
 
   // FIXED: Simplified the Provision adding to ensure property compatibility
   const handleAddProvision = async (prov: { category: string; originalClause: string; safeClause: string; tags?: string[] }) => {
@@ -339,6 +536,7 @@ const App: React.FC = () => {
        setIsSyncing(true);
        try {
          await supabase.from('provisions').insert([{
+           id: newProv.id,
            user_id: user.id,
            category: prov.category,
            original_clause: prov.originalClause,
@@ -347,6 +545,46 @@ const App: React.FC = () => {
          }]);
        } catch (err) { console.error("Cloud provision sync failed", err); }
        finally { setIsSyncing(false); }
+    }
+  };
+
+  const handleDeleteProvision = async (id: string) => {
+    setProvisions(prev => prev.filter(p => p.id !== id));
+    if (cloudActive && supabase && user && !user.id.startsWith('LOCAL-')) {
+      setIsSyncing(true);
+      try {
+        await supabase.from('provisions').delete().eq('id', id);
+      } catch (err) { console.error('Cloud provision delete failed', err); }
+      finally { setIsSyncing(false); }
+    }
+  };
+
+  const handleSaveProfile = async (data: ProfileData) => {
+    setProfile(data);
+    persistProfileLocal(data);
+    if (cloudActive && supabase && user && !user.id.startsWith('LOCAL-')) {
+      setIsSyncing(true);
+      try {
+        await supabase.from('profiles').upsert({
+          user_id: user.id,
+          full_name: data.fullName,
+          email: data.email || user.email,
+          phone: data.phone,
+          company: data.company,
+          job_title: data.jobTitle,
+          location: data.location,
+          bio: data.bio,
+          notifications: data.notifications
+        }, { onConflict: 'user_id' });
+        addToast('Profile synced to cloud', 'success');
+      } catch (err) {
+        console.error('Cloud profile sync failed', err);
+        addToast('Cloud profile sync failed', 'error');
+      } finally {
+        setIsSyncing(false);
+      }
+    } else {
+      addToast('Profile saved locally (cloud not configured)', 'info');
     }
   };
 
@@ -389,6 +627,23 @@ const App: React.FC = () => {
     init();
   }, [cloudActive, fetchCloudData, addToast]);
 
+  useEffect(() => {
+    const logPageView = async () => {
+      if (!hasAcceptedTerms || !cloudActive || !supabase) return;
+      try {
+        const sessionId = ensureSessionId();
+        await supabase.from('usage_events').insert([{ session_id: sessionId, user_id: user?.id || null, path: window.location.pathname }]);
+      } catch (err) {
+        console.error('Usage event log failed', err);
+      }
+    };
+    logPageView();
+  }, [cloudActive, hasAcceptedTerms, user, ensureSessionId]);
+
+  useEffect(() => {
+    fetchUsageStats();
+  }, [fetchUsageStats, user]);
+
   const handleAuditComplete = async (result: string, fileName: string, jurisdiction?: string): Promise<string> => {
     const scoreMatch = result.match(/\[EXPOSURE_SCORE\]:\s*(\d+)/i);
     const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
@@ -404,6 +659,7 @@ const App: React.FC = () => {
        setIsSyncing(true);
        try {
          await supabase.from('audits').insert([{
+           id: localId,
            user_id: user.id,
            project_id: currentProjectId,
            file_name: fileName,
@@ -448,17 +704,93 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDeleteProject = async (id: string) => {
+    setProjects(prev => prev.filter(p => p.id !== id));
+    setAuditHistory(prev => prev.filter(a => a.projectId !== id));
+    if (currentProjectId === id) setCurrentProjectId('DEFAULT');
+    addToast('Workspace deleted and associated audits removed', 'info');
+
+    if (cloudActive && supabase && user && !user.id.startsWith('LOCAL-')) {
+      setIsSyncing(true);
+      try {
+        await supabase.from('projects').delete().eq('id', id);
+        await supabase.from('audits').delete().eq('project_id', id);
+      } catch (err) { console.error('Cloud workspace delete failed', err); }
+      finally { setIsSyncing(false); }
+    }
+  };
+
   const activeProject = useMemo(() => projects.find(p => p.id === currentProjectId) || projects[0], [projects, currentProjectId]);
+
+  const handleMoveAudits = async (ids: string[], targetProjectId: string) => {
+    if (!targetProjectId) return;
+    setAuditHistory(prev => prev.map(a => ids.includes(a.id) ? { ...a, projectId: targetProjectId } : a));
+    const targetName = projects.find(p => p.id === targetProjectId)?.name || 'workspace';
+    addToast(`Moved ${ids.length} audit${ids.length > 1 ? 's' : ''} to ${targetName}`, 'success');
+
+    if (cloudActive && supabase && user && !user.id.startsWith('LOCAL-')) {
+      setIsSyncing(true);
+      try {
+        await supabase.from('audits').update({ project_id: targetProjectId }).in('id', ids);
+      } catch (err) { console.error('Cloud audit move failed', err); }
+      finally { setIsSyncing(false); }
+    }
+  };
+
+  const handleDeleteAudits = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    setAuditHistory(prev => prev.filter(a => !ids.includes(a.id)));
+    addToast(`Deleted ${ids.length} audit${ids.length > 1 ? 's' : ''}`, 'info');
+
+    if (cloudActive && supabase && user && !user.id.startsWith('LOCAL-')) {
+      setIsSyncing(true);
+      try {
+        await supabase.from('audits').delete().in('id', ids);
+      } catch (err) { console.error('Cloud audit delete failed', err); }
+      finally { setIsSyncing(false); }
+    }
+  };
+
+  const handleImportVault = async (importedAudits: HistoricAudit[]) => {
+    if (!importedAudits || importedAudits.length === 0) return;
+    setAuditHistory(prev => [...importedAudits, ...prev]);
+
+    if (cloudActive && supabase && user && !user.id.startsWith('LOCAL-')) {
+      setIsSyncing(true);
+      try {
+        const payload = importedAudits.map(a => ({
+          id: a.id,
+          user_id: user.id,
+          project_id: a.projectId || currentProjectId,
+          file_name: a.fileName,
+          score: a.score,
+          level: a.level,
+          color: a.color,
+          analysis_text: a.analysisText,
+          jurisdiction: a.jurisdiction
+        }));
+        await supabase.from('audits').upsert(payload, { onConflict: 'id' });
+      } catch (err) { console.error('Cloud import sync failed', err); }
+      finally { setIsSyncing(false); }
+    }
+  };
 
   const renderView = () => {
     switch (currentView) {
       case AppView.LANDING: return <LandingPage isActivated={!!user} onEnterSuite={() => { if (user) setCurrentView(AppView.DASHBOARD); else setIsAuthOpen(true); }} />;
       case AppView.LEGAL_AUDIT: return <Suspense fallback={<ModuleLoader />}><LegalAudit language={targetLanguage} savedAnalysis={latestAuditResult} onAuditComplete={handleAuditComplete} onStartConsult={() => setCurrentView(AppView.LIVE_CONSULT)} onError={(e: any) => addToast(e.message, "error")} onSaveProvision={handleAddProvision} /></Suspense>;
-      case AppView.NEURAL_LIBRARY: return <Suspense fallback={<ModuleLoader />}><NeuralLibrary provisions={provisions} onDelete={(id) => setProvisions(prev => prev.filter(p => p.id !== id))} onAdd={handleAddProvision} /></Suspense>;
+      case AppView.NEURAL_LIBRARY: return <Suspense fallback={<ModuleLoader />}><NeuralLibrary provisions={provisions} onDelete={handleDeleteProvision} onAdd={handleAddProvision} /></Suspense>;
       case AppView.REDLINE_MASTER: return <Suspense fallback={<ModuleLoader />}><RedlineMaster language={targetLanguage} onRedlineComplete={() => addToast("Redline Analysis Committed", "success")} /></Suspense>;
       case AppView.RISK_ASSESSMENT: return <Suspense fallback={<ModuleLoader />}><RiskAssessment auditContext={latestAuditResult || undefined} language={targetLanguage} /></Suspense>;
-      case AppView.PROJECT_HUB: return <Suspense fallback={<ModuleLoader />}><ProjectHub projects={projects} currentProjectId={currentProjectId} onSelectProject={(id) => { setCurrentProjectId(id); setCurrentView(AppView.DASHBOARD); }} onCreateProject={handleCreateProject} onDeleteProject={(id) => setProjects(prev => prev.filter(p => p.id !== id))} /></Suspense>;
+      case AppView.PROJECT_HUB: return <Suspense fallback={<ModuleLoader />}><ProjectHub projects={projects} currentProjectId={currentProjectId} onSelectProject={(id) => { setCurrentProjectId(id); setCurrentView(AppView.DASHBOARD); }} onCreateProject={handleCreateProject} onDeleteProject={handleDeleteProject} /></Suspense>;
       case AppView.MARKETING_SUITE: return <Suspense fallback={<ModuleLoader />}><MarketingSuite language={targetLanguage} initialContext={latestAuditResult || undefined} onAssetGenerated={() => {}} /></Suspense>;
+      case AppView.ADMIN:
+        if (!isOwner) return <div className="p-12 text-center text-gray-400 text-sm">Access restricted.</div>;
+        return (
+          <Suspense fallback={<ModuleLoader message="Loading Owner Console..." />}>
+            <AdminPanel stats={usageStats} onRefresh={fetchUsageStats} privacyMode={privacyMode} cloudActive={cloudActive} />
+          </Suspense>
+        );
       case AppView.DASHBOARD:
         const projectAudits = auditHistory.filter(a => a.projectId === currentProjectId || currentProjectId === 'DEFAULT');
         return (
@@ -468,13 +800,17 @@ const App: React.FC = () => {
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[140px] rounded-full" />
                 <div className="relative z-10">
                   <div className="flex flex-wrap items-center gap-4 mb-10">
-                    <div className="px-5 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex items-center gap-3">
-                       <Cloud size={14} className={isSyncing ? "text-indigo-400 animate-pulse" : "text-emerald-400"} />
-                       <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">{isSyncing ? "Neural Sync..." : "Cloud Link: Persistent"}</span>
+                      <div className={`px-5 py-2 rounded-full flex items-center gap-3 border ${privacyMode ? 'bg-red-500/10 border-red-500/20' : 'bg-indigo-500/10 border-indigo-500/20'}`}>
+                        {privacyMode ? <CloudOff size={14} className="text-red-400" /> : <Cloud size={14} className={!cloudActive ? "text-gray-500" : isSyncing ? "text-indigo-400 animate-pulse" : "text-emerald-400"} />}
+                        <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${privacyMode ? 'text-red-400' : 'text-indigo-400'}`}>{privacyMode ? "Privacy: Local Only" : (!cloudActive ? "Cloud Disabled" : (isSyncing ? "Neural Sync..." : "Cloud Link: Persistent"))}</span>
                     </div>
+                    <button onClick={togglePrivacyMode} className="px-5 py-2 bg-white/5 border border-white/10 rounded-full flex items-center gap-3 hover:border-emerald-400/50 hover:bg-emerald-500/10 transition-colors">
+                      <Shield size={14} className="text-emerald-400" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-400">{privacyMode ? 'Enable Cloud' : 'Shield: Localize'}</span>
+                    </button>
                     <div className="px-5 py-2 bg-white/5 border border-white/10 rounded-full flex items-center gap-3">
-                       <Layers size={14} className="text-gray-400" />
-                       <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Node: {activeProject?.name}</span>
+                      <Layers size={14} className="text-gray-400" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Node: {activeProject?.name}</span>
                     </div>
                   </div>
                   <h1 className="text-7xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85] text-white uppercase italic">NERVE <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-violet-500">CENTER.</span></h1>
@@ -517,6 +853,24 @@ const App: React.FC = () => {
                     <span className="text-5xl font-black text-white italic tracking-tighter">{provisions.length}</span>
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mt-1">Standard Library</p>
                   </div>
+                    {isOwner && usageStats && (
+                      <div className="w-full border-t border-white/5 pt-6">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-400">Owner Telemetry</span>
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Private</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/15">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Total Views</p>
+                            <p className="text-3xl font-black text-white mt-1">{usageStats.total}</p>
+                          </div>
+                          <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/15">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">7d Active</p>
+                            <p className="text-3xl font-black text-white mt-1">{usageStats.last7d}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                 </div>
               </div>
             </header>
@@ -525,7 +879,6 @@ const App: React.FC = () => {
                <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-8">
                  {[ 
                     { title: "Neural Eye", icon: Camera, view: AppView.NEURAL_EYE, color: "cyan" },
-                    { title: "Neural Deploy", icon: Globe, view: AppView.NEURAL_DEPLOY, color: "emerald" },
                     { title: "Neural Mask", icon: Ghost, view: AppView.NEURAL_MASK, color: "fuchsia" },
                     { title: "Sovereign Map", icon: Map, view: AppView.SOVEREIGN_MAP, color: "emerald" },
                     { title: "Neural Command", icon: MessageSquare, view: AppView.NEURAL_COMMAND, color: "cyan" },
@@ -590,8 +943,8 @@ const App: React.FC = () => {
           [AppView.COMPARATIVE_ANALYSIS]: <Suspense fallback={<ModuleLoader />}><ComparativeAnalysis language={targetLanguage} onComparisonComplete={(res) => setLatestComparison(res)} /></Suspense>,
           [AppView.NEGOTIATION_DUEL]: <Suspense fallback={<ModuleLoader />}><NegotiationDuel auditContext={latestAuditResult || undefined} comparisonResult={latestComparison || undefined} language={targetLanguage} /></Suspense>,
           [AppView.BOARDROOM_MEMO]: <Suspense fallback={<ModuleLoader />}><BoardroomMemo auditResult={latestAuditResult || undefined} comparisonResult={latestComparison || undefined} language={targetLanguage} /></Suspense>,
-          [AppView.CREATOR_STUDIO]: <Suspense fallback={<ModuleLoader />}><CreatorTools onExport={() => bundleProjectForMarketplace({})} isExporting={false} adminStats={{revenue: 0, licenses: 0}} language={targetLanguage} initialContext={pushedContext} orders={[]} setOrders={() => {}} onGenerateKey={() => ""} onOrderFulfilled={() => {}} onOrderRefunded={() => {}} price={0} /></Suspense>,
-          [AppView.NEURAL_VAULT]: <Suspense fallback={<ModuleLoader />}><NeuralVault audits={auditHistory.filter(a => a.projectId === currentProjectId || currentProjectId === 'DEFAULT')} onLoadAudit={(a) => { setLatestAuditResult(a.analysisText); setCurrentView(AppView.LEGAL_AUDIT); }} onDeleteAudit={(id) => setAuditHistory(prev => prev.filter(a => a.id !== id))} onImportVault={(audits) => setAuditHistory(prev => [...audits, ...prev])} onAction={(a, view) => { setLatestAuditResult(a.analysisText); setCurrentView(view); }} onSynthesize={handleSynthesize} /></Suspense>,
+          [AppView.CREATOR_STUDIO]: <Suspense fallback={<ModuleLoader />}><CreatorTools cloudAllowed={!privacyMode} onExport={() => bundleProjectForMarketplace({})} isExporting={false} adminStats={{revenue: 0, licenses: 0}} language={targetLanguage} initialContext={pushedContext} orders={[]} setOrders={() => {}} onGenerateKey={() => ""} onOrderFulfilled={() => {}} onOrderRefunded={() => {}} price={0} /></Suspense>,
+          [AppView.NEURAL_VAULT]: <Suspense fallback={<ModuleLoader />}><NeuralVault audits={auditHistory.filter(a => a.projectId === currentProjectId || currentProjectId === 'DEFAULT')} projects={projects} currentProjectId={currentProjectId} onLoadAudit={(a) => { setLatestAuditResult(a.analysisText); setCurrentView(AppView.LEGAL_AUDIT); }} onDeleteAudit={(id) => handleDeleteAudits([id])} onDeleteSelected={handleDeleteAudits} onMoveAudits={handleMoveAudits} onImportVault={handleImportVault} onAction={(a, view) => { setLatestAuditResult(a.analysisText); setCurrentView(view); }} onSynthesize={handleSynthesize} /></Suspense>,
           [AppView.COMPLIANCE_RADAR]: <Suspense fallback={<ModuleLoader />}><ComplianceRadar auditContext={latestAuditResult || undefined} language={targetLanguage} /></Suspense>,
           [AppView.ADVERSARY_DOSSIER]: <Suspense fallback={<ModuleLoader />}><CounterpartyDossier language={targetLanguage} /></Suspense>,
           [AppView.PRECEDENT_FORGE]: <Suspense fallback={<ModuleLoader />}><PrecedentForge language={targetLanguage} initialRisk={forgeContext} /></Suspense>,
@@ -605,25 +958,26 @@ const App: React.FC = () => {
           [AppView.NEURAL_FORENSICS]: <Suspense fallback={<ModuleLoader />}><NeuralForensics audits={auditHistory} language={targetLanguage} /></Suspense>,
           [AppView.NEURAL_SANDBOX]: <Suspense fallback={<ModuleLoader />}><NeuralSandbox provisions={provisions} language={targetLanguage} /></Suspense>,
           [AppView.PORTFOLIO_SYNTHESIS]: <Suspense fallback={<ModuleLoader />}><PortfolioSynthesis audits={auditHistory.filter(a => a.projectId === currentProjectId || currentProjectId === 'DEFAULT')} language={targetLanguage} /></Suspense>,
-          [AppView.SETTINGS]: <Suspense fallback={<ModuleLoader />}><SettingsView user={user} onLogout={() => setShowLogoutConfirm(true)} /></Suspense>,
+          [AppView.SETTINGS]: <Suspense fallback={<ModuleLoader />}><SettingsView user={user} initialProfile={profile} onSaveProfile={handleSaveProfile} onLogout={() => setShowLogoutConfirm(true)} /></Suspense>,
           [AppView.SOVEREIGN_MAP]: <Suspense fallback={<ModuleLoader />}><SovereignMap language={targetLanguage} /></Suspense>,
           [AppView.NEURAL_MASK]: <Suspense fallback={<ModuleLoader />}><NeuralMask auditContext={latestAuditResult || undefined} language={targetLanguage} /></Suspense>,
-          [AppView.NEURAL_DEPLOY]: <Suspense fallback={<ModuleLoader />}><NeuralDeploy /></Suspense>,
           [AppView.NEURAL_EYE]: <Suspense fallback={<ModuleLoader />}><NeuralEye onAuditExtracted={(res) => { setLatestAuditResult(res); addToast("Audit Signal Acquired", "success"); }} /></Suspense>
         };
         return views[currentView] || null;
     }
   };
 
-  if (isLoadingSession) return <div className="h-screen w-screen bg-[#020202] flex items-center justify-center"><ModuleLoader message="Syncing Neural Identity..." /></div>;
-  if (isAuthOpen) return <AuthGate onAuthSuccess={async (u: any) => { setUser({...u, id: u.id || `LOCAL-${Date.now()}`}); setIsAuthOpen(false); if (u.id) await fetchCloudData(u.id); setCurrentView(AppView.DASHBOARD); }} />;
+  if (isLoadingSession) return <div className="h-screen w-screen bg-[#0a0a1f] flex items-center justify-center"><ModuleLoader message="Syncing Neural Identity..." /></div>;
+  if (!hasAcceptedTerms) return <TermsModal onAccept={handleAcceptTerms} onDecline={() => addToast('Acceptance required to proceed.', 'error')} />;
+
+  if (isAuthOpen) return <AuthGate cloudAllowed={!privacyMode} onAuthSuccess={async (u: any) => { setUser({...u, id: u.id || `LOCAL-${Date.now()}`}); setProfile(readLocalProfile({ name: u.name, email: u.email })); setIsAuthOpen(false); if (u.id) await fetchCloudData(u.id); setCurrentView(AppView.DASHBOARD); }} />;
   if (currentView === AppView.LANDING) return renderView();
 
   return (
-    <div className="flex min-h-screen bg-[#020202] text-white selection:bg-indigo-500/30">
-      <Sidebar currentView={currentView} setView={setCurrentView} isActivated={!!user} user={user} isCreatorMode={isCreatorMode} toggleCreatorMode={() => setIsCreatorMode(!isCreatorMode)} onLogout={() => setShowLogoutConfirm(true)} onHome={() => setCurrentView(AppView.LANDING)} />
-      <main className="flex-1 overflow-auto px-12 pb-20">
-        <header className="h-28 flex items-center justify-between border-b border-white/5 mb-12 sticky top-0 bg-[#020202]/90 backdrop-blur-3xl z-40">
+    <div className="flex min-h-screen bg-[#0a0a1f] text-white selection:bg-indigo-500/30">
+      <Sidebar currentView={currentView} setView={setCurrentView} isActivated={!!user} user={user} isCreatorMode={isCreatorMode} toggleCreatorMode={() => setIsCreatorMode(!isCreatorMode)} onLogout={() => setShowLogoutConfirm(true)} onHome={() => setCurrentView(AppView.LANDING)} isOwner={isOwner} />
+      <main className="flex-1 overflow-auto px-6 lg:px-12 pb-20 lg:pl-80">
+        <header className="h-28 flex items-center justify-between border-b border-white/5 mb-12 sticky top-0 bg-[#0a0a1f]/90 backdrop-blur-3xl z-40">
           <div className="flex items-center gap-6">
             <span className="text-[14px] font-black uppercase text-indigo-500 italic">{currentView.replace('_', ' ')}</span>
             <div className="w-1.5 h-1.5 bg-white/10 rounded-full" />
@@ -639,11 +993,80 @@ const App: React.FC = () => {
                </div>
             </div>
           </div>
-          <button onClick={() => setIsCommandPaletteOpen(true)} className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 group hover:border-indigo-500/40 transition-all shadow-xl">
-            <Command size={14} className="text-gray-500 group-hover:text-indigo-400" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 group-hover:text-white">Command Palette</span>
-            <kbd className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded text-[8px] font-black text-gray-600">K</kbd>
-          </button>
+          
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsCommandPaletteOpen(true)} className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 group hover:border-indigo-500/40 transition-all shadow-xl">
+              <Command size={14} className="text-gray-500 group-hover:text-indigo-400" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 group-hover:text-white">Command Palette</span>
+              <kbd className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded text-[8px] font-black text-gray-600">K</kbd>
+            </button>
+
+            {user && (
+              <div className="relative" ref={userMenuRef}>
+                <button 
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-3 px-4 py-3 bg-white/5 border border-white/10 rounded-2xl hover:border-indigo-500/40 transition-all group"
+                >
+                  <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-sm">
+                    {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden lg:flex flex-col items-start">
+                    <span className="text-[10px] font-black text-white uppercase tracking-wide">{user.name || 'User'}</span>
+                    <span className="text-[8px] font-medium text-gray-600">{user.email}</span>
+                  </div>
+                  <ChevronDown size={14} className={`text-gray-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-64 bg-[#0f0f2e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200 z-50">
+                    <div className="p-4 border-b border-white/5 bg-white/[0.02]">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black">
+                          {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black text-white truncate">{user.name || 'User'}</p>
+                          <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-2 py-1 bg-indigo-600/10 border border-indigo-500/20 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                        <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">
+                          {user.id.startsWith('LOCAL-') ? 'Local Mode' : 'Cloud Sync Active'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2">
+                      <button 
+                        onClick={() => { setCurrentView(AppView.SETTINGS); setShowUserMenu(false); }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group text-left"
+                      >
+                        <SettingsIcon size={16} className="text-gray-500 group-hover:text-indigo-400" />
+                        <span className="text-[11px] font-bold text-gray-400 group-hover:text-white uppercase tracking-wide">Settings</span>
+                      </button>
+                      
+                      <button 
+                        onClick={() => { setShowUserMenu(false); setShowLogoutConfirm(true); }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-red-500/10 transition-all group text-left"
+                      >
+                        <LogOut size={16} className="text-gray-500 group-hover:text-red-400" />
+                        <span className="text-[11px] font-bold text-gray-400 group-hover:text-red-400 uppercase tracking-wide">Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button 
+              onClick={() => setShowLogoutConfirm(true)}
+              className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-2 hover:bg-red-500/20 hover:border-red-500/40 transition-all group"
+            >
+              <LogOut size={16} className="text-red-500 group-hover:text-red-400" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-red-500 group-hover:text-red-400">Log Out</span>
+            </button>
+          </div>
         </header>
         <div className="max-w-7xl mx-auto">{renderView()}</div>
       </main>
@@ -662,7 +1085,7 @@ const App: React.FC = () => {
 
       {(portfolioPosture || isSynthesizing) && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-8 bg-black/90 backdrop-blur-2xl animate-in fade-in">
-           <div className="max-w-4xl w-full bg-[#0a0a0a] border border-white/10 rounded-[64px] p-12 md:p-20 relative shadow-2xl shadow-indigo-500/10 max-h-[85vh] overflow-y-auto custom-scrollbar">
+           <div className="max-w-4xl w-full bg-[#0f0f2e] border border-white/10 rounded-[64px] p-12 md:p-20 relative shadow-2xl shadow-indigo-500/10 max-h-[85vh] overflow-y-auto custom-scrollbar">
               <button onClick={() => setPortfolioPosture(null)} className="absolute top-12 right-12 text-gray-500 hover:text-white transition-colors">
                 <X size={32} />
               </button>
@@ -695,8 +1118,8 @@ const App: React.FC = () => {
            </div>
         </div>
       )}
-      {toasts.map(toast => (<div key={toast.id} className="fixed bottom-12 right-12 z-[200] bg-[#0a0a0a]/95 backdrop-blur-3xl border border-white/10 px-10 py-6 rounded-[32px] flex items-center gap-6 animate-in slide-in-from-right-16 shadow-2xl border-l-4 border-l-indigo-600"><CheckCircle2 size={24} className="text-indigo-400" /><span className="text-[12px] font-black uppercase text-white italic">{toast.message}</span></div>))}
-      {showLogoutConfirm && (<div className="fixed inset-0 z-[1000] flex items-center justify-center p-8 bg-black/98 backdrop-blur-3xl animate-in fade-in"><div className="max-w-md w-full bg-[#0a0a0a] border border-white/10 rounded-[64px] p-20 text-center shadow-2xl"><div className="w-28 h-28 bg-red-500/10 rounded-[40px] flex items-center justify-center mb-12 mx-auto text-red-500 shadow-2xl"><AlertTriangle size={64} /></div><h2 className="text-5xl font-black mb-6 text-white uppercase italic">Sever Link?</h2><button onClick={() => { localStorage.removeItem('lexiscan_user'); window.location.reload(); }} className="w-full py-7 bg-red-600 text-white font-black rounded-[32px] shadow-2xl hover:bg-red-500 transition-all text-xl uppercase mb-4">Sever Connection</button><button onClick={() => setShowLogoutConfirm(false)} className="w-full py-7 bg-white/5 text-white font-black rounded-[32px] hover:bg-white/10 transition-all text-xl uppercase">Maintain Link</button></div></div>)}
+      {toasts.map(toast => (<div key={toast.id} className="fixed bottom-12 right-12 z-[200] bg-[#0f0f2e]/95 backdrop-blur-3xl border border-white/10 px-10 py-6 rounded-[32px] flex items-center gap-6 animate-in slide-in-from-right-16 shadow-2xl border-l-4 border-l-indigo-600"><CheckCircle2 size={24} className="text-indigo-400" /><span className="text-[12px] font-black uppercase text-white italic">{toast.message}</span></div>))}
+      {showLogoutConfirm && (<div className="fixed inset-0 z-[1000] flex items-center justify-center p-8 bg-black/98 backdrop-blur-3xl animate-in fade-in"><div className="max-w-md w-full bg-[#0f0f2e] border border-white/10 rounded-[64px] p-20 text-center shadow-2xl"><div className="w-28 h-28 bg-red-500/10 rounded-[40px] flex items-center justify-center mb-12 mx-auto text-red-500 shadow-2xl"><AlertTriangle size={64} /></div><h2 className="text-5xl font-black mb-6 text-white uppercase italic">Sever Link?</h2><button onClick={() => { localStorage.removeItem('lexiscan_user'); window.location.reload(); }} className="w-full py-7 bg-red-600 text-white font-black rounded-[32px] shadow-2xl hover:bg-red-500 transition-all text-xl uppercase mb-4">Sever Connection</button><button onClick={() => setShowLogoutConfirm(false)} className="w-full py-7 bg-white/5 text-white font-black rounded-[32px] hover:bg-white/10 transition-all text-xl uppercase">Maintain Link</button></div></div>)}
     </div>
   );
 };

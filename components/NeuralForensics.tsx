@@ -15,7 +15,8 @@ const NeuralForensics: React.FC<NeuralForensicsProps> = ({ audits, language = 'E
 
   const handleGenerateManifest = async () => {
     if (audits.length === 0) {
-      alert("Operational history required to generate manifest.");
+      console.warn("Forensic manifest requires audit history");
+      alert("📊 History Required: Load audit records to generate forensic manifest.");
       return;
     }
     setIsGenerating(true);

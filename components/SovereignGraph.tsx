@@ -15,7 +15,8 @@ const SovereignGraph: React.FC<SovereignGraphProps> = ({ auditContext, language 
 
   const handleRunMap = async () => {
     if (!auditContext) {
-      alert("Entity mapping requires a Tactical Audit context.");
+      console.warn("Entity mapping requires audit context");
+      alert("🕸️ Context Required: Entity mapping requires an active Tactical Audit.");
       return;
     }
     setIsMapping(true);

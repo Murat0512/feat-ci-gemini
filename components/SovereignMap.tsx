@@ -101,9 +101,10 @@ const SovereignMap: React.FC<SovereignMapProps> = ({ language = 'English' }) => 
                  </h4>
                  
                  <div className="space-y-8">
-                    <div className="bg-white/[0.03] border border-white/5 rounded-3xl p-8 text-center shadow-inner">
-                       <span className="text-[9px] font-black text-gray-700 uppercase tracking-widest block mb-2">Detected Jurisdiction</span>
-                       <div className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">{geoData.jurisdiction}</div>
+                    <div className="bg-gradient-to-br from-indigo-500/20 to-indigo-500/5 border-2 border-indigo-500/60 rounded-3xl p-10 text-center shadow-lg shadow-indigo-500/20">
+                       <span className="text-xs font-black text-indigo-300 uppercase tracking-[0.2em] block mb-4">⚖ Detected Jurisdiction</span>
+                       <div className="text-5xl font-black text-indigo-100 italic tracking-tighter uppercase leading-tight drop-shadow-lg">{geoData.jurisdiction}</div>
+                       <div className="mt-4 text-xs text-indigo-200 font-semibold">Legal Framework Active</div>
                     </div>
 
                     <div className="space-y-4">
