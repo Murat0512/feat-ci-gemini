@@ -31,7 +31,7 @@ export const genAI = new GoogleGenerativeAI(API_KEY);
 
 const executeWithRetry = async <T>(
   operation: (model: any) => Promise<T>,
-  modelName: string = "gemini-1.5-flash"
+  modelName: string = "gemini-pro"
 ): Promise<T> => {
   const model = genAI.getGenerativeModel({ model: modelName });
   return await operation(model);
@@ -51,7 +51,7 @@ export const compareLegalDocuments = async (doc1: string, doc2: string, language
   return executeWithRetry(async (model) => {
     const result = await model.generateContent(`Compare these docs in ${language}`);
     return result.response.text();
-  }, "gemini-1.5-pro");
+  }, "gemini-pro");
 };
 
 // Marketing + visual helpers are implemented later in the file to avoid duplicates.
@@ -77,19 +77,19 @@ export const synthesizePortfolioRisk = async (audits: HistoricAudit[], language:
   // Build a concise audit summary prompt
   const auditSummary = audits.map(a => `- ${a.fileName || a.id}: ${a.score ?? 0}%`).join('\n');
 
-  const prompt = [
-    `You are LexiScan's macro synthesizer. Produce an executive markdown posture in ${language}.`,
-    `Input Audits:\n${auditSummary}`,
-    `Output must be markdown. Include a top-level title, an "Aggregate Risk" line with a numeric percentage prefixed by "## Aggregate Risk:", a short list of critical vectors and clear recommendations. Include a machine-readable line: ## [AGGREGATE_RISK]: <number>%`,
-    { temperature: 0.2 }
-  ];
+  const prompt = `You are LexiScan's macro synthesizer. Produce an executive markdown posture in ${language}.
+
+Input Audits:
+${auditSummary}
+
+Output must be markdown. Include a top-level title, an "Aggregate Risk" line with a numeric percentage prefixed by "## Aggregate Risk:", a short list of critical vectors and clear recommendations. Include a machine-readable line: ## [AGGREGATE_RISK]: <number>%`;
 
   // Use the higher-capacity model for synthesis
   return executeWithRetry(async (model) => {
     const result = await model.generateContent(prompt);
     // result.response.text() returns a string body
     return result.response.text();
-  }, 'gemini-1.5-pro');
+  }, 'gemini-pro');
 };
 
 // Small generative stubs used by varied components
