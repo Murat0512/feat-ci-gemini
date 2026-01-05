@@ -118,12 +118,12 @@ const AuthGate: React.FC<AuthGateProps> = ({ onAuthSuccess, cloudAllowed = true 
   };
 
   return (
-    <div className="fixed inset-0 bg-[#020202] z-[1000] flex items-center justify-center p-6 overflow-hidden">
+    <div className="fixed inset-0 bg-[#020202] z-[1000] flex items-center justify-center p-6 overflow-y-auto">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className={`absolute top-[-10%] left-[-10%] w-[60%] h-[60%] blur-[150px] rounded-full animate-pulse-soft transition-colors duration-1000 ${mode === 'login' ? 'bg-indigo-600/10' : 'bg-emerald-600/10'}`} />
       </div>
 
-      <div className={`max-w-xl w-full bg-[#0a0a0a] border rounded-[64px] p-12 md:p-20 relative shadow-2xl animate-in zoom-in-95 duration-700 transition-all ${mode === 'login' ? 'border-white/10' : 'border-emerald-500/20 shadow-emerald-500/5'}`}>
+      <div className={`max-w-xl w-full bg-[#0a0a0a] border rounded-[64px] p-8 md:p-12 relative shadow-2xl animate-in zoom-in-95 duration-700 transition-all my-auto ${mode === 'login' ? 'border-white/10' : 'border-emerald-500/20 shadow-emerald-500/5'}`}>
         
         <div className="absolute top-10 inset-x-0 flex justify-center pointer-events-none">
            <div className={`px-4 py-1.5 rounded-full border flex items-center gap-2 transition-all duration-500 ${isOnline ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/40' : 'bg-red-500/10 border-red-500/20 text-red-500 animate-pulse'}`}>
@@ -132,16 +132,16 @@ const AuthGate: React.FC<AuthGateProps> = ({ onAuthSuccess, cloudAllowed = true 
            </div>
         </div>
 
-        <div className="flex flex-col items-center mb-12">
-          <div className={`w-24 h-24 rounded-[32px] flex items-center justify-center mb-8 shadow-2xl relative group overflow-hidden transition-colors ${mode === 'login' ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
+        <div className="flex flex-col items-center mb-8">
+          <div className={`w-20 h-20 rounded-[32px] flex items-center justify-center mb-6 shadow-2xl relative group overflow-hidden transition-colors ${mode === 'login' ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-            <Fingerprint className="text-white relative z-10" size={48} />
+            <Fingerprint className="text-white relative z-10" size={40} />
           </div>
           
-          <h2 className="text-4xl md:text-5xl font-black text-white uppercase italic tracking-tighter mb-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-black text-white uppercase italic tracking-tighter mb-3 text-center">
             {mode === 'login' ? 'Access Vault' : 'Commit Identity'}
           </h2>
-          <p className="text-gray-500 text-center text-lg font-medium italic max-w-sm">
+          <p className="text-gray-500 text-center text-base font-medium italic max-w-sm">
             {mode === 'login' 
               ? 'Synchronize your tactical intelligence.' 
               : 'Register to record your audits and sync across devices.'}
@@ -223,7 +223,7 @@ const AuthGate: React.FC<AuthGateProps> = ({ onAuthSuccess, cloudAllowed = true 
           </form>
         )}
 
-        <div className="mt-12 pt-10 border-t border-white/5 text-center">
+        <div className="mt-8 pt-6 border-t border-white/5 text-center">
           <button 
             onClick={toggleMode} 
             className={`font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 mx-auto ${mode === 'login' ? 'text-emerald-500 hover:text-emerald-400' : 'text-indigo-400 hover:text-white'}`}

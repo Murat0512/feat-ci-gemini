@@ -29,6 +29,7 @@ export enum AppView {
   NEURAL_COMMAND = 'neural_command',
   NEURAL_FORENSICS = 'neural_forensics',
   NEURAL_SANDBOX = 'neural_sandbox',
+  MULTI_DOC_INVESTIGATOR = 'multi_doc_investigator',
   SOVEREIGN_MAP = 'sovereign_map',
   NEURAL_MASK = 'neural_mask',
   NEURAL_EYE = 'neural_eye',

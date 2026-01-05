@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, lazy, Suspense, useRef, useMem
 import Sidebar from './components/Sidebar';
 import AuthGate from './components/AuthGate';
 import TermsModal from './components/TermsModal';
+import FeatureGuide from './components/FeatureGuide';
 import LandingPage from './components/LandingPage';
 import { AppView, Language, RiskProfile, HistoricAudit, GlobalProvision, Project } from './types';
 import { supabase, isCloudConfigured } from './services/supabaseClient';
@@ -13,7 +14,7 @@ import {
   ArrowUpRight, CheckCircle2, Info, Bell, Shield, ArrowRight, History, Fingerprint, BrainCircuit, GitCompare, Trophy,
   Activity as ActivityIcon, LayoutGrid, Rocket, Target, ShieldAlert, HeartPulse, Sparkles, Star, Swords, Presentation, Key, Archive,
   ExternalLink, Search, Loader2, Cpu, Clock, ChevronRight, DatabaseZap, HardDrive, Cloud, CloudOff, Layers, MousePointer2, TrendingDown, Hammer, Map, Globe2,
-  Book, FileDiff, Command, Clapperboard, Wifi, BarChart3, ShieldEllipsis, MessageSquare, AlertCircle, Radio, Gavel, ShieldX, Network, Edit3, Ghost, Camera, User, ChevronDown
+  Book, FileDiff, Command, Clapperboard, Wifi, BarChart3, ShieldEllipsis, MessageSquare, AlertCircle, Radio, Gavel, ShieldX, Network, Edit3, Ghost, Camera, User, ChevronDown, BookOpen
 } from 'lucide-react';
 
 const LegalAudit = lazy(() => import('./components/LegalAudit'));
@@ -256,6 +257,12 @@ const App: React.FC = () => {
   const [portfolioPosture, setPortfolioPosture] = useState<string | null>(null);
   const [forgeContext, setForgeContext] = useState<{ type: string; clause: string } | undefined>(undefined);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isFeatureGuideOpen, setIsFeatureGuideOpen] = useState(false);
+  const [hasSeenFeatureGuide, setHasSeenFeatureGuide] = useState(() => {
+    try {
+      return localStorage.getItem('lexiscan_feature_guide_seen') === 'true';
+    } catch { return false; }
+  });
   const [nodesOnline, setNodesOnline] = useState(4);
   
   const [projects, setProjects] = useState<Project[]>(() => {
@@ -1001,6 +1008,11 @@ const App: React.FC = () => {
               <kbd className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded text-[8px] font-black text-gray-600">K</kbd>
             </button>
 
+            <button onClick={() => setIsFeatureGuideOpen(true)} className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 group hover:border-emerald-500/40 transition-all shadow-xl">
+              <BookOpen size={14} className="text-gray-500 group-hover:text-emerald-400" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 group-hover:text-white">Features</span>
+            </button>
+
             {user && (
               <div className="relative" ref={userMenuRef}>
                 <button 
@@ -1080,6 +1092,12 @@ const App: React.FC = () => {
           onSelectProject={(id) => { setCurrentProjectId(id); addToast(`Switched to node: ${id}`, 'info'); }}
           audits={auditHistory}
           onLoadAudit={(a: any) => { setLatestAuditResult(a.analysisText); setCurrentView(AppView.LEGAL_AUDIT); }}
+        />
+        <FeatureGuide 
+          isOpen={isFeatureGuideOpen} 
+          onClose={() => { setIsFeatureGuideOpen(false); if (!hasSeenFeatureGuide) { localStorage.setItem('lexiscan_feature_guide_seen', 'true'); setHasSeenFeatureGuide(true); } }}
+          autoTour={!hasSeenFeatureGuide}
+          setAutoTourDone={(done) => { if (done) { localStorage.setItem('lexiscan_feature_guide_seen', 'true'); setHasSeenFeatureGuide(true); } }}
         />
       </Suspense>
 
