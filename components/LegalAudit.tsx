@@ -173,7 +173,12 @@ const LegalAudit: React.FC<LegalAuditProps> = ({
             accept="application/pdf" 
             className="hidden" 
           />
-          <label htmlFor="audit-upload-input" className="absolute inset-0 cursor-pointer" />
+          <label
+            htmlFor="audit-upload-input"
+            className="absolute inset-0 cursor-pointer"
+            onDragOver={(e) => { e.preventDefault(); }}
+            onDrop={(e: React.DragEvent<HTMLLabelElement>) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) processFile(f); }}
+          />
           <Upload className="transition-all duration-500 text-gray-600 group-hover:text-white group-hover:scale-110 mb-8" size={64} />
           <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">Inject PDF Handshake</h3>
           <p className="text-gray-500 font-bold uppercase tracking-[0.2em] mt-4 text-xs">Drop File or Click Zone</p>
