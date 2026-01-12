@@ -33,8 +33,27 @@ const executeWithRetry = async <T>(
   operation: (model: any) => Promise<T>,
   modelName: string = "gemini-pro"
 ): Promise<T> => {
-  const model = genAI.getGenerativeModel({ model: modelName });
-  return await operation(model);
+  // Try a list of candidate model names to handle environment differences
+  const candidates = [modelName, 'gemini-1.5', 'gemini-1.0', 'gemini', 'text-bison-001', 'chat-bison-001'];
+  let lastError: any = null;
+  for (const m of candidates) {
+    try {
+      const model = genAI.getGenerativeModel({ model: m });
+      return await operation(model);
+    } catch (err: any) {
+      lastError = err;
+      const msg = (err && err.message) ? err.message.toLowerCase() : '';
+      // If error suggests model not found or unsupported, try next candidate
+      if (msg.includes('not found') || msg.includes('not supported') || msg.includes('models') || msg.includes('404')) {
+        // continue to next candidate
+        continue;
+      }
+      // For other errors, rethrow immediately
+      throw err;
+    }
+  }
+  // If none of the candidates worked, rethrow the last error
+  throw lastError;
 };
 
 // --- CORE EXPORTS ---
