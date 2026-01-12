@@ -53,8 +53,8 @@ export interface HistoricAudit {
   fileName: string;
   timestamp: string;
   score: number;
-  level: string;
-  color: string;
+  level?: string;
+  color?: string;
   analysisText: string;
   jurisdiction?: string;
   redlineData?: string;

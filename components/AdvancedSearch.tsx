@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Trending2, History, AlertCircle, TrendingUp } from 'lucide-react';
+import { Search, History, AlertCircle, TrendingUp } from 'lucide-react';
 import { HistoricAudit } from '../types';
 import { searchService } from '../services/searchService';
 
