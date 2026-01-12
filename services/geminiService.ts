@@ -60,7 +60,8 @@ const executeWithRetry = async <T>(
 
 export const analyzeLegalDocument = async (base64: string, language: Language = 'English') => {
   return executeWithRetry(async (model) => {
-    const result = await model.generateContent([`Audit in ${language}`, { inlineData: { data: base64, mimeType: "image/jpeg" } }]);
+    // Use PDF mimeType for uploaded contract files
+    const result = await model.generateContent([`Audit in ${language}`, { inlineData: { data: base64, mimeType: "application/pdf" } }]);
     return result.response.text();
   });
 };
