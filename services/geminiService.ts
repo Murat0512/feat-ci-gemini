@@ -29,30 +29,93 @@ export const genAI = new GoogleGenerativeAI(API_KEY);
 // TODO: For each placeholder above, implement a clear prompt schema, response parsing, error handling, and unit tests. Consider centralizing prompt templates and reuse the `executeWithRetry` wrapper to standardize retries and timeouts.
 
 
+let cachedModelName: string | null = null;
+
+const candidateModels = [
+  process.env.VITE_GEMINI_MODEL || 'gemini-pro',
+  'gemini-1.5',
+  'gemini-1.0',
+  'gemini',
+  'text-bison-001',
+  'chat-bison-001'
+];
+
+const probeModel = async (m: string) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: m });
+    // lightweight probe call
+    const probe = await model.generateContent('Health check');
+    // if result returns without throwing, model appears usable
+    return true;
+  } catch (err: any) {
+    return false;
+  }
+};
+
+const autoSelectModel = async () => {
+  if (cachedModelName) return cachedModelName;
+  for (const m of candidateModels) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const ok = await probeModel(m);
+      if (ok) {
+        cachedModelName = m;
+        return m;
+      }
+    } catch (_) {
+      // ignore and try next
+    }
+  }
+  return null;
+};
+
 const executeWithRetry = async <T>(
   operation: (model: any) => Promise<T>,
-  modelName: string = "gemini-pro"
+  modelName: string = ''
 ): Promise<T> => {
-  // Try a list of candidate model names to handle environment differences
-  const candidates = [modelName, 'gemini-1.5', 'gemini-1.0', 'gemini', 'text-bison-001', 'chat-bison-001'];
+  // If a modelName was explicitly provided, try it first
+  const explicit = modelName || process.env.VITE_GEMINI_MODEL || null;
+  const tried: string[] = [];
   let lastError: any = null;
-  for (const m of candidates) {
+
+  // Try explicit model first
+  if (explicit) {
+    tried.push(explicit);
+    try {
+      const model = genAI.getGenerativeModel({ model: explicit });
+      return await operation(model);
+    } catch (err: any) {
+      lastError = err;
+    }
+  }
+
+  // Use auto-selected model if available
+  const selected = await autoSelectModel();
+  if (selected && !tried.includes(selected)) {
+    try {
+      const model = genAI.getGenerativeModel({ model: selected });
+      return await operation(model);
+    } catch (err: any) {
+      lastError = err;
+    }
+  }
+
+  // Fallback: iterate candidate list
+  for (const m of candidateModels) {
+    if (tried.includes(m)) continue;
     try {
       const model = genAI.getGenerativeModel({ model: m });
       return await operation(model);
     } catch (err: any) {
       lastError = err;
       const msg = (err && err.message) ? err.message.toLowerCase() : '';
-      // If error suggests model not found or unsupported, try next candidate
       if (msg.includes('not found') || msg.includes('not supported') || msg.includes('models') || msg.includes('404')) {
-        // continue to next candidate
         continue;
       }
-      // For other errors, rethrow immediately
       throw err;
     }
   }
-  // If none of the candidates worked, rethrow the last error
+
   throw lastError;
 };
 
